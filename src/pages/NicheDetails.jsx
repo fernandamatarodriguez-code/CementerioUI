@@ -79,7 +79,16 @@ export default function NicheDetails() {
   const [openDelete, setOpenDelete] = React.useState(false);
   const [openSnackbar, setOpenSnackbar] = React.useState(false);
   const [fileError, setFileError] = React.useState("");
-  const [annualidades, setAnnualidades] = React.useState([]);
+  const [annualidades, setAnnualidades] = React.useState([
+    {
+      year: niche.lastPaymentYear || new Date(niche.lastPayment).getFullYear(),
+      name: "boleta_compra.pdf",
+      url: "",
+      type: "application/pdf",
+      date: new Date(niche.lastPayment || Date.now()).toLocaleDateString(),
+      tipoBoleta: "Compra",
+    },
+  ]);
   const [selectedFile, setSelectedFile] = React.useState(null);
   const [openViewer, setOpenViewer] = React.useState(false);
 
@@ -93,9 +102,10 @@ export default function NicheDetails() {
       url: URL.createObjectURL(file),
       type: file.type,
       date: new Date().toLocaleDateString(),
+      tipoBoleta: "Anualidad",
     };
 
-    setAnnualidades((prev) => [newEntry, ...prev].slice(0, 5));
+    setAnnualidades((prev) => [newEntry, ...prev]);
     setOpenSnackbar(true);
   };
 
@@ -221,39 +231,64 @@ export default function NicheDetails() {
 
             {/* ================= ANUALIDADES ================= */}
             <Box>
-              <Typography variant="h6" mb={2}>
-                Anualidades
-              </Typography>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6">
+                  Documentos
+                </Typography>
 
-              <Button variant="contained" component="label">
-                Cargar Anualidad
-                <input hidden type="file" onChange={handleFileChange} />
-              </Button>
+                <Button variant="contained" component="label" startIcon={<AddIcon />}>
+                  Cargar Anualidad
+                  <input hidden type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} />
+                </Button>
+              </Stack>
 
               {fileError && <Typography color="error">{fileError}</Typography>}
 
-              {annualidades.length > 0 && (
-                <TableContainer component={Paper} sx={{ mt: 2 }}>
-                  <Table size="small">
-                    <TableBody>
-                      {annualidades.map((a, i) => (
-                        <TableRow
-                          key={i}
-                          hover
-                          sx={{ cursor: "pointer" }}
-                          onClick={() => {
-                            setSelectedFile(a);
-                            setOpenViewer(true);
-                          }}
-                        >
-                          <TableCell>{a.year}</TableCell>
-                          <TableCell>{a.date}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell><b>Año</b></TableCell>
+                      <TableCell><b>Tipo</b></TableCell>
+                      <TableCell><b>Archivo</b></TableCell>
+                      <TableCell><b>Fecha de Carga</b></TableCell>
+                      <TableCell><b>Acciones</b></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {annualidades.map((a, i) => (
+                      <TableRow key={i} hover>
+                        <TableCell>{a.year}</TableCell>
+                        <TableCell>
+                          <Typography
+                            sx={{
+                              color: a.tipoBoleta === "Compra" ? "secondary.main" : "primary.main",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {a.tipoBoleta}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>{a.name}</TableCell>
+                        <TableCell>{a.date}</TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            disabled={!a.url}
+                            onClick={() => {
+                              setSelectedFile(a);
+                              setOpenViewer(true);
+                            }}
+                          >
+                            Ver
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Box>
 
             <Divider />
@@ -289,8 +324,8 @@ export default function NicheDetails() {
             <Stack spacing={2} sx={{ mt: 1 }}>
               <TextField label="Nombre" onChange={handleDifuntoChange("nombre")} />
               <TextField label="Apellidos" onChange={handleDifuntoChange("apellidos")} />
-              <TextField type="date" InputLabelProps={{ shrink: true }} onChange={handleDifuntoChange("fechaNacimiento")} />
-              <TextField type="date" InputLabelProps={{ shrink: true }} onChange={handleDifuntoChange("fechaDefuncion")} />
+              <TextField type="date" label="Fecha Nacimiento" InputLabelProps={{ shrink: true }} onChange={handleDifuntoChange("fechaNacimiento")} />
+              <TextField type="date" label="Fecha Defunción" InputLabelProps={{ shrink: true }} onChange={handleDifuntoChange("fechaDefuncion")} />
             </Stack>
           </DialogContent>
           <DialogActions>
@@ -301,16 +336,16 @@ export default function NicheDetails() {
 
         {/* VISOR */}
         <Dialog open={openViewer} onClose={() => setOpenViewer(false)} maxWidth="md" fullWidth>
-          <DialogTitle>Visualizar Anualidad</DialogTitle>
+          <DialogTitle>Visualizar Boleta - {selectedFile?.tipoBoleta}</DialogTitle>
           <DialogContent>
             {selectedFile?.type === "application/pdf"
               ? <iframe src={selectedFile?.url} width="100%" height="500px" title="PDF" />
-              : <img src={selectedFile?.url} alt="Anualidad" style={{ width: "100%" }} />}
+              : <img src={selectedFile?.url} alt="Boleta" style={{ width: "100%" }} />}
           </DialogContent>
         </Dialog>
 
-        <Snackbar open={openSnackbar} autoHideDuration={3000}>
-          <Alert severity="success">Anualidad cargada correctamente</Alert>
+        <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
+          <Alert severity="success">Boleta cargada correctamente</Alert>
         </Snackbar>
 
         <ConfirmDialog

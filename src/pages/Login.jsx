@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import {
-  Card, CardContent, Typography, Stack, TextField, Button, Box
+  Card, CardContent, Typography, Stack, TextField, Button, Box,
+  InputAdornment, IconButton
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../Services/UserService';
 import { useAuth } from '../Context/AuthContext';
@@ -8,6 +11,7 @@ import { useAuth } from '../Context/AuthContext';
 export default function LoginPage() {
   const navigate = useNavigate();
   const { signIn } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -41,7 +45,29 @@ export default function LoginPage() {
             <form onSubmit={onSubmit}>
               <Stack spacing={2.5}>
                 <TextField label="Correo Electrónico" fullWidth />
-                <TextField label="Contraseña" type="password" fullWidth />
+
+            
+                <TextField 
+                  label="Contraseña" 
+                  type={showPassword ? 'text' : 'password'} 
+                  fullWidth
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+
+
+                
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 1 }}>
                   <Button
