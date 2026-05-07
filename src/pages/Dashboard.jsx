@@ -1,8 +1,10 @@
 // src/pages/Dashboard.jsx
-import * as React from 'react';
+import *  as React from 'react';
 import {
   Box, Stack, Typography, Card, CardContent, Grid, Button, Divider,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Paper,
+  CircularProgress
 } from '@mui/material';
 
 import SearchIcon from '@mui/icons-material/Search';
@@ -11,41 +13,84 @@ import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import ErrorRoundedIcon from '@mui/icons-material/ErrorRounded';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { useNavigate } from 'react-router-dom';
-
-const stats = [
-  { label: 'Total Nichos', value: 2 },
-  { label: 'Nichos Disponibles', value: 98 },
-  { label: 'Próximos a Vencer', value: 0 },
-  { label: 'Vencidos', value: 2 },
-];
-
-const rows = [
-  {
-    difunto: 'Juan Pérez García',
-    propietario: 'María Pérez López',
-    ultima: '2024',
-  },
-  {
-    difunto: 'Ana María Rodríguez',
-    propietario: 'Carlos Rodríguez Moreno',
-    ultima: '2023',
-  },
-  {
-    difunto: 'Juana Perez',
-    propietario: 'Luisa Sibaja',
-    ultima: '2025',
-  },
-  {
-    difunto: 'Lucia Rojas',
-    propietario: 'Pascal Rojas',
-    ultima: '2026',
-  },
-];
+import { getNiche } from '../Services/Niches';
+import { useEffect } from 'react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [selectedDifuntos, setSelectedDifuntos] = React.useState([]);
+  const [rows, setRows] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [stats, setStats] = React.useState([
+    { label: 'Total Nichos', value: 0 },
+    { label: 'Nichos Disponibles', value: 0 },
+    { label: 'Próximos a Vencer', value: 0 },
+    { label: 'Vencidos', value: 0 },
+  ]);
+
+  // Función para obtener los nichos desde la API
+  const fetchNiches = async () => {
+    try {
+      setLoading(true);
+      const response = await getNiche();
+      
+      // Mapea la respuesta de la API al formato esperado por la tabla
+      const mappedRows = response.map((niche) => ({
+        id: niche.id,
+        number: niche.number,
+        propietario: niche.owner,
+        ultima: niche.lastPaymentYear || new Date().getFullYear().toString(),
+        difuntos: niche.occupants || [],
+        status: niche.status,
+        isActive: niche.is_active
+      }));
+
+      setRows(mappedRows);
+
+      // Calcular estadísticas
+      const añoActual = new Date().getFullYear();
+      const totalNichos = mappedRows.length;
+      const nichosDisponibles = mappedRows.filter(r => r.status === 'disponible' || !r.isActive).length;
+      const proximosVencer = mappedRows.filter(r => {
+        const diff = añoActual - Number(r.ultima);
+        return diff === 1;
+      }).length;
+      const vencidos = mappedRows.filter(r => {
+        const diff = añoActual - Number(r.ultima);
+        return diff > 1;
+      }).length;
+
+      setStats([
+        { label: 'Total Nichos', value: totalNichos },
+        { label: 'Nichos Disponibles', value: nichosDisponibles },
+        { label: 'Próximos a Vencer', value: proximosVencer },
+        { label: 'Vencidos', value: vencidos },
+      ]);
+
+    } catch (error) {
+      console.error('Error al obtener los nichos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNiches();
+  }, []);
+
+  const handleOpenDialog = (difuntos) => {
+    setSelectedDifuntos(difuntos);
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedDifuntos([]);
+  };
 
   // 🔥 Calcula el estado automáticamente
   const getEstado = (ultima) => {
@@ -127,13 +172,15 @@ export default function Dashboard() {
 
           <Divider />
 
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
           <TableContainer sx={{ borderRadius: 2 }}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>
-                    Nombre del Difunto
-                  </TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>
                     Nombre del Propietario
                   </TableCell>
@@ -155,7 +202,7 @@ export default function Dashboard() {
 
                   return (
                     <TableRow key={idx} hover>
-                      <TableCell>{r.difunto}</TableCell>
+                      
                       <TableCell>{r.propietario}</TableCell>
                       <TableCell>{r.ultima}</TableCell>
 
@@ -189,14 +236,25 @@ export default function Dashboard() {
                       </TableCell>
 
                       <TableCell>
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          sx={{ borderRadius: 999 }}
-                          onClick={() => navigate('/Niche/Details')}
-                        >
-                          Ver
-                        </Button>
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                            onClick={() => handleOpenDialog(r.difuntos)}
+                          >
+                            Ver Difuntos
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="secondary"
+                            size="small"
+                            sx={{ borderRadius: 999 }}
+                            onClick={() => navigate(`/niches/${r.id}`)}
+                          >
+                            Actualizar
+                          </Button>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   );
@@ -204,8 +262,48 @@ export default function Dashboard() {
               </TableBody>
             </Table>
           </TableContainer>
+          )}
         </CardContent>
       </Card>
+
+      {/* Dialog para ver datos del difunto */}
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Difuntos Registrados
+          <IconButton onClick={handleCloseDialog} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Nombre</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Apellidos</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Fecha de Nacimiento</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Fecha de Defunción</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {selectedDifuntos.map((difunto, index) => (
+                  <TableRow key={index} hover>
+                    <TableCell>{difunto.name}</TableCell>
+                    <TableCell>{difunto.name}</TableCell>
+                    <TableCell>{difunto.createAt}</TableCell>
+                    <TableCell>{difunto.updatedAt}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} variant="contained" color="secondary">
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

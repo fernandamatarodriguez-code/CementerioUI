@@ -22,13 +22,19 @@ import {
   TableCell,
   TableBody,
   Paper,
+  CircularProgress,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router-dom";
+import { addNiche } from "../Services/Niches";
+import { insertOccupant } from "../Services/NicheOccupantsService";
+import { insertPayment, createPaymentFromFile } from "../Services/Payments";
 
 export default function AddNiche() {
   const navigate = useNavigate();
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
 
   const [form, setForm] = React.useState({
     numero: "",
@@ -83,18 +89,55 @@ export default function AddNiche() {
     setOpenSnackbar(true);
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     if (!file) {
       setFileError("Debe cargar la boleta");
       return;
     }
 
-    console.log("Formulario:", form);
-    console.log("Difuntos:", difuntos);
+    setLoading(true);
 
-    navigate("/dashboard");
+    try {
+      // 1. Crear el nicho
+      const nicheData = {
+        number: form.numero,
+        owner: form.propietario,
+        type: "Individual",
+        identification: form.cedula,
+        phone: form.telefono,
+        address: form.direccion,
+        email: form.email,
+        description: form.descripcion,
+        status: "ocupado",
+        is_active: true,
+      };
+
+      const createdNiche = await addNiche(nicheData);
+
+      // 2. Agregar difuntos al nicho
+      for (const difunto of difuntos) {
+        await insertOccupant({
+          nicheId: createdNiche.id,
+          name: difunto.nombre,
+          lastName: difunto.apellidos,
+          birthDate: difunto.fechaNacimiento,
+          deathDate: difunto.fechaDefuncion,
+        });
+      }
+
+      // 3. Cargar el documento de pago
+      const paymentData = await createPaymentFromFile(file, createdNiche.id);
+      await insertPayment(paymentData);
+
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message || "Error al guardar el nicho. Intente nuevamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -236,6 +279,12 @@ export default function AddNiche() {
               </Typography>
             )}
 
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
+
             <Divider sx={{ my: 5 }} />
 
             {/* ================= ACCIONES ================= */}
@@ -243,12 +292,18 @@ export default function AddNiche() {
               <Button
                 variant="outlined"
                 onClick={() => navigate("/dashboard")}
+                disabled={loading}
               >
                 Cancelar
               </Button>
 
-              <Button type="submit" variant="contained" color="success">
-                Guardar
+              <Button 
+                type="submit" 
+                variant="contained" 
+                color="success"
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={24} color="inherit" /> : "Guardar"}
               </Button>
             </Stack>
 

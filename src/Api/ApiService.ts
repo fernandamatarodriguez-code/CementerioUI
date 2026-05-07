@@ -25,6 +25,11 @@ class ApiService {
     const response = await axiosInstance.delete<T>(url);
     return response.data;
   }
+
+  static async patch<T>(url: string, id: string, data: any): Promise<T> {
+    const response = await axiosInstance.patch<T>(`${url}/${id}`, data);
+    return response.data;
+  }
 }
 
 export default ApiService;

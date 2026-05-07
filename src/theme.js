@@ -16,7 +16,13 @@ export const theme = createTheme({
   shape: { borderRadius: 14 },
   typography: {
     fontFamily: '"Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
-    h4: { fontWeight: 700, letterSpacing: 0.2 },
+    h4: { fontSize: '1.75rem', fontWeight: 700, letterSpacing: 0.2 },
+    h5: { fontSize: '1.25rem', fontWeight: 600 },
+    h6: { fontSize: '1.1rem', fontWeight: 600 },
+    subtitle1: { fontSize: '1rem', fontWeight: 500 },
+    subtitle2: { fontSize: '0.875rem', fontWeight: 500, color: '#6B7280' },
+    body1: { fontSize: '0.9375rem' },
+    body2: { fontSize: '0.875rem' },
     button: { textTransform: 'none', fontWeight: 600 },
   },
   components: {
