@@ -46,7 +46,7 @@ export default function NicheDetails() {
   const [form, setForm] = React.useState({
     number: "",
     lastPaymentYear: "",
-    ownerId: "",
+    identification: "",
     owner: "",
     phone: "",
     address: "",
@@ -89,7 +89,7 @@ export default function NicheDetails() {
         setForm({
           number: nicheData.number || "",
           lastPaymentYear: nicheData.lastPaymentYear || new Date().getFullYear().toString(),
-          ownerId: nicheData.identification || "",
+          identification: nicheData.identification || "",
           owner: nicheData.owner || "",
           phone: nicheData.phone || "",
           address: nicheData.address || "",
@@ -103,8 +103,8 @@ export default function NicheDetails() {
             id: o.id,
             nombre: o.name || "",
             apellidos: o.lastName || "",
-            fechaNacimiento: o.birthDate || "",
-            fechaDefuncion: o.deathDate || "",
+            fechaNacimiento: o.fechaNacimiento || "",
+            fechaDefuncion: o.fechaDefuncion || "",
           })));
         }
 
@@ -113,12 +113,13 @@ export default function NicheDetails() {
         if (payments && payments.length > 0) {
           setAnnualidades(payments.map(p => ({
             id: p.id,
-            year: p.year || new Date(p.paymentDate).getFullYear(),
+            paidAt: new Date(p.paidAt).getFullYear(),
+            lastPayment: new Date(p.paidAt),
             name: p.documentName,
             url: p.documentBase64 ? `data:${p.documentMimeType};base64,${p.documentBase64}` : "",
             type: p.documentMimeType,
-            date: new Date(p.paymentDate || p.createdAt).toLocaleDateString(),
-            tipoBoleta: p.year === nicheData.lastPaymentYear ? "Compra" : "Anualidad",
+            date: new Date(p.paidAt).toLocaleDateString(),
+            documentType: p.documentType === "anualidad" ? "Anualidad" : "Compra",
           })));
         }
       } catch (err) {
@@ -147,8 +148,8 @@ export default function NicheDetails() {
         nicheId: Number(id),
         name: difunto.nombre,
         lastName: difunto.apellidos,
-        birthDate: difunto.fechaNacimiento,
-        deathDate: difunto.fechaDefuncion,
+        fechaNacimiento: difunto.fechaNacimiento,
+        fechaDefuncion: difunto.fechaDefuncion,
       });
       
       setDifuntos((prev) => [...prev, difunto]);
@@ -170,7 +171,7 @@ export default function NicheDetails() {
 
     try {
       // Crear y guardar el pago
-      const paymentData = await createPaymentFromFile(file, Number(id));
+      const paymentData = await createPaymentFromFile(file, Number(id), 'anualidad');
       await insertPayment(paymentData);
 
       const newEntry = {
@@ -179,7 +180,7 @@ export default function NicheDetails() {
         url: URL.createObjectURL(file),
         type: file.type,
         date: new Date().toLocaleDateString(),
-        tipoBoleta: "Anualidad",
+        documentType: "Anualidad",
       };
 
       setAnnualidades((prev) => [newEntry, ...prev]);
@@ -195,7 +196,7 @@ export default function NicheDetails() {
       await updateNiche(Number(id), {
         number: form.number,
         owner: form.owner,
-        identification: form.ownerId,
+        identification: form.identification,
         phone: form.phone,
         address: form.address,
         email: form.email,
@@ -204,7 +205,7 @@ export default function NicheDetails() {
         status: niche?.status || "ocupado",
         is_active: true,
       });
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       setError("Error al actualizar el nicho");
     } finally {
@@ -252,7 +253,7 @@ export default function NicheDetails() {
               <Button
                 startIcon={<ArrowBackIcon />}
                 component={RouterLink}
-                to="/"
+                to="/dashboard"
                 variant="outlined"
               >
                 Volver
@@ -289,8 +290,8 @@ export default function NicheDetails() {
                 <Grid item xs={12} md={6}>
                   <TextField 
                     label="Cédula Propietario" 
-                    value={form.ownerId} 
-                    onChange={handleFormChange("ownerId")}
+                    value={form.identification} 
+                    onChange={handleFormChange("identification")}
                     fullWidth 
                   />
                 </Grid>
@@ -377,8 +378,8 @@ export default function NicheDetails() {
                         <TableRow key={i}>
                           <TableCell>{d.nombre}</TableCell>
                           <TableCell>{d.apellidos}</TableCell>
-                          <TableCell>{d.fechaNacimiento}</TableCell>
-                          <TableCell>{d.fechaDefuncion}</TableCell>
+                          <TableCell>{d.fechaNacimiento ? new Date(d.fechaNacimiento).toLocaleDateString() : ""}</TableCell>
+                          <TableCell>{d.fechaDefuncion ? new Date(d.fechaDefuncion).toLocaleDateString() : ""}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -418,19 +419,19 @@ export default function NicheDetails() {
                   <TableBody>
                     {annualidades.map((a, i) => (
                       <TableRow key={i} hover>
-                        <TableCell>{a.year}</TableCell>
+                        <TableCell>{a.paidAt}</TableCell>
                         <TableCell>
                           <Typography
                             sx={{
-                              color: a.tipoBoleta === "Compra" ? "secondary.main" : "primary.main",
+                              color: a.documentType === "Compra" ? "secondary.main" : "primary.main",
                               fontWeight: 500,
                             }}
                           >
-                            {a.tipoBoleta}
+                            {a.documentType}
                           </Typography>
                         </TableCell>
                         <TableCell>{a.name}</TableCell>
-                        <TableCell>{a.date}</TableCell>
+                        <TableCell>{a.lastPayment.toLocaleDateString()}</TableCell>
                         <TableCell>
                           <Button
                             size="small"
@@ -465,7 +466,7 @@ export default function NicheDetails() {
               </Button>
 
               <Stack direction="row" spacing={2}>
-                <Button variant="outlined" onClick={() => navigate("/")} disabled={saving}>
+                <Button variant="outlined" onClick={() => navigate("/dashboard")} disabled={saving}>
                   Cancelar
                 </Button>
 

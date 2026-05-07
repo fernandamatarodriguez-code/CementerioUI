@@ -289,9 +289,9 @@ export default function Dashboard() {
                 {selectedDifuntos.map((difunto, index) => (
                   <TableRow key={index} hover>
                     <TableCell>{difunto.name}</TableCell>
-                    <TableCell>{difunto.name}</TableCell>
-                    <TableCell>{difunto.createAt}</TableCell>
-                    <TableCell>{difunto.updatedAt}</TableCell>
+                    <TableCell>{difunto.lastName}</TableCell>
+                    <TableCell>{difunto.fechaNacimiento ? new Date(difunto.fechaNacimiento).toLocaleDateString() : ""}</TableCell>
+                    <TableCell>{difunto.fechaDefuncion ? new Date(difunto.fechaDefuncion).toLocaleDateString() : ""}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

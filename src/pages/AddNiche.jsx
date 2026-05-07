@@ -123,13 +123,13 @@ export default function AddNiche() {
           nicheId: createdNiche.id,
           name: difunto.nombre,
           lastName: difunto.apellidos,
-          birthDate: difunto.fechaNacimiento,
-          deathDate: difunto.fechaDefuncion,
+          fechaNacimiento: difunto.fechaNacimiento,
+          fechaDefuncion: difunto.fechaDefuncion,
         });
       }
 
       // 3. Cargar el documento de pago
-      const paymentData = await createPaymentFromFile(file, createdNiche.id);
+      const paymentData = await createPaymentFromFile(file, createdNiche.id, 'compra');
       await insertPayment(paymentData);
 
       navigate("/dashboard");

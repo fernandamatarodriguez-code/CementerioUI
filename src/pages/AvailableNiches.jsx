@@ -244,8 +244,6 @@ export default function AvailableNiches() {
         onClose={() => setReserveOpen(false)}
         onConfirm={() => {
           setReserveOpen(false);
-          // navegar o continuar flujo de venta
-          // navigate(`/sales/new?niche=${reservedId}`);
         }}
       />
     </Box>

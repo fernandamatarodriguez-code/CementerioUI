@@ -101,13 +101,13 @@ export const fileToBase64 = (file: File): Promise<string> => {
  * @param nicheId - ID del nicho asociado
  * @returns PaymentDto listo para enviar
  */
-export const createPaymentFromFile = async (file: File, nicheId: number): Promise<PaymentDto> => {
+export const createPaymentFromFile = async (file: File, nicheId: number, documentType: 'compra' | 'anualidad'): Promise<PaymentDto> => {
   const base64 = await fileToBase64(file);
   
   return {
     nicheId,
     documentName: file.name,
-    documentType: file.name.split('.').pop() || 'unknown',
+    documentType: documentType,
     documentSize: file.size,
     documentMimeType: file.type,
     documentBase64: base64
