@@ -1,15 +1,115 @@
 import ApiService from "../Api/ApiService";
 import endpoints from "../Api/Endpoints";
-import type { PaymentDto} from "../Models/PaymentDto";
+import type { PaymentDto } from "../Models/PaymentDto";
+import type { PaymentResponseDto, PaymentListResponseDto } from "../Models/PaymentResponseDto";
 
-export const insertPayment = async <T>(payment: PaymentDto): Promise<T> => {
-  return await ApiService.post<T>(endpoints.payments.addPayment, payment);
+/**
+ * Crea un nuevo pago/anualidad
+ * @param payment - Datos del pago incluyendo documento
+ * @returns Pago creado
+ */
+export const insertPayment = async (payment: PaymentDto): Promise<PaymentResponseDto> => {
+  return await ApiService.post<PaymentResponseDto>(endpoints.payments.addPayment, payment);
 };
 
-export const getPayment = async <T>(payment: PaymentDto): Promise<T> => {
-  return await ApiService.get<T>(endpoints.payments.getPayments, payment);
+/**
+ * Obtiene todos los pagos
+ * @param filters - Filtros opcionales
+ * @returns Lista de pagos
+ */
+export const getPayments = async (filters?: Record<string, any>): Promise<PaymentResponseDto[]> => {
+  return await ApiService.get<PaymentResponseDto[]>(endpoints.payments.getPayments, filters);
 };
 
-export const updatePayment = async <T>(payment: PaymentDto): Promise<T> => {
-  return await ApiService.patch<T>(endpoints.payments.updatePayment, payment.nicheId.toString(), payment);
+/**
+ * Obtiene los pagos de un nicho específico
+ * @param nicheId - ID del nicho
+ * @returns Lista de pagos del nicho
+ */
+export const getPaymentsByNicheId = async (nicheId: number): Promise<PaymentResponseDto[]> => {
+  return await ApiService.get<PaymentResponseDto[]>(endpoints.payments.getPayments, { nicheId });
+};
+
+/**
+ * Obtiene un pago por su ID
+ * @param id - ID del pago
+ * @returns Datos del pago
+ */
+export const getPaymentById = async (id: number): Promise<PaymentResponseDto> => {
+  return await ApiService.getById<PaymentResponseDto>(endpoints.payments.getPayments, id);
+};
+
+/**
+ * Actualiza un pago existente
+ * @param id - ID del pago
+ * @param payment - Datos a actualizar
+ * @returns Pago actualizado
+ */
+export const updatePayment = async (id: number, payment: Partial<PaymentDto>): Promise<PaymentResponseDto> => {
+  return await ApiService.patch<PaymentResponseDto>(endpoints.payments.updatePayment, id.toString(), payment);
+};
+
+/**
+ * Elimina un pago
+ * @param id - ID del pago a eliminar
+ */
+export const deletePayment = async (id: number): Promise<void> => {
+  return await ApiService.delete<void>(`${endpoints.payments.getPayments}/${id}`);
+};
+
+/**
+ * Obtiene el historial de pagos paginado
+ * @param page - Número de página
+ * @param pageSize - Tamaño de página
+ * @param filters - Filtros opcionales
+ * @returns Respuesta paginada de pagos
+ */
+export const getPaymentHistory = async (
+  page: number = 1, 
+  pageSize: number = 10, 
+  filters?: Record<string, any>
+): Promise<PaymentListResponseDto> => {
+  return await ApiService.get<PaymentListResponseDto>(endpoints.payments.getPayments, {
+    page,
+    pageSize,
+    ...filters
+  });
+};
+
+/**
+ * Convierte un archivo a Base64 para enviarlo como pago
+ * @param file - Archivo a convertir
+ * @returns Promise con el string en Base64
+ */
+export const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remover el prefijo "data:...;base64,"
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
+/**
+ * Crea un PaymentDto a partir de un archivo
+ * @param file - Archivo del documento
+ * @param nicheId - ID del nicho asociado
+ * @returns PaymentDto listo para enviar
+ */
+export const createPaymentFromFile = async (file: File, nicheId: number): Promise<PaymentDto> => {
+  const base64 = await fileToBase64(file);
+  
+  return {
+    nicheId,
+    documentName: file.name,
+    documentType: file.name.split('.').pop() || 'unknown',
+    documentSize: file.size,
+    documentMimeType: file.type,
+    documentBase64: base64
+  };
 };

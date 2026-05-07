@@ -8,16 +8,19 @@ import {
   Button,
   Box,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 
 import { useNavigate } from "react-router-dom";
+import { sendPassword } from "../Services/AuthService";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const [emailSent, setEmailSent] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const email = e.target[0].value;
@@ -28,11 +31,16 @@ export default function ForgotPassword() {
     }
 
     setError("");
+    setLoading(true);
 
-    // 🔥 Aquí luego llamas tu API
-    // await sendTemporaryPassword(email)
-
-    setEmailSent(true);
+    try {
+      await sendPassword({ email });
+      setEmailSent(true);
+    } catch (err) {
+      setError(err.message || "Error al enviar la contraseña. Intente nuevamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -69,18 +77,24 @@ export default function ForgotPassword() {
 
             <form onSubmit={handleSubmit}>
               <Stack spacing={2}>
-                <TextField label="Correo Electrónico" fullWidth />
+                <TextField label="Correo Electrónico" fullWidth disabled={loading} />
 
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
                   <Button
                     variant="outlined"
                     onClick={() => navigate("/login")}
+                    disabled={loading}
                   >
                     Volver
                   </Button>
 
-                  <Button type="submit" variant="contained" color="secondary">
-                    Enviar
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="secondary"
+                    disabled={loading}
+                  >
+                    {loading ? <CircularProgress size={24} color="inherit" /> : "Enviar"}
                   </Button>
                 </Stack>
               </Stack>

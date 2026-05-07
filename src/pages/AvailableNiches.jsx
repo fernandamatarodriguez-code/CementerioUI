@@ -3,24 +3,13 @@ import * as React from 'react';
 import {
   Box, Stack, Typography, Card, CardContent, Grid, Button, MenuItem, TextField,
   Table, TableHead, TableBody, TableRow, TableCell, Chip, ToggleButtonGroup, ToggleButton,
-  Dialog, DialogTitle, DialogContent, DialogActions, Divider
+  Dialog, DialogTitle, DialogContent, DialogActions, Divider, CircularProgress
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
-
-// —— datos de ejemplo (usa tu fuente real)
-const available = [
-  {
-    id: 'A-002',
-    sector: 'A',
-    tipo: 'Individual',
-    precio: '₡50.000',
-    ubicacion: 'Piso 1, Fila 2',
-    descripcion: 'Nicho individual con buena iluminación',
-  },
-];
+import { getAvailableNiches, updateNiche } from '../Services/Niches';
 
 // ---------- DIALOGO: Detalles ----------
 function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
@@ -28,20 +17,20 @@ function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>
-        Detalles del Nicho {data.id}
+        Detalles del Nicho {data.number}
       </DialogTitle>
       <Divider />
       <DialogContent dividers>
         <Stack spacing={1.5}>
-          <Typography><strong>Sector:</strong> {data.sector}</Typography>
+          <Typography><strong>Número:</strong> {data.number}</Typography>
           <Typography>
             <strong>Tipo:</strong>{' '}
             <PersonIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: .5 }} />
-            {data.tipo}
+            {data.type}
           </Typography>
-          <Typography><strong>Precio:</strong> {data.precio}</Typography>
-          <Typography><strong>Ubicación:</strong> {data.ubicacion}</Typography>
-          <Typography><strong>Descripción:</strong> {data.descripcion}</Typography>
+          <Typography><strong>Estado:</strong> {data.status}</Typography>
+          <Typography><strong>Dirección:</strong> {data.address}</Typography>
+          <Typography><strong>Descripción:</strong> {data.description}</Typography>
           <Typography align="center" sx={{ mt:8}}>
             ¿Desea reservar este nicho?
           </Typography>
@@ -84,8 +73,11 @@ function ReserveResultDialog({ open, onClose, nicheId, onConfirm }) {
 export default function AvailableNiches() {
   const navigate = useNavigate();
 
-  // filtros (placeholder)
-  const [sector, setSector] = React.useState('');
+  // Estado de datos
+  const [available, setAvailable] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  // filtros
   const [tipo, setTipo] = React.useState('');
   const [view, setView] = React.useState('list');
 
@@ -96,9 +88,24 @@ export default function AvailableNiches() {
   const [reserveOpen, setReserveOpen] = React.useState(false);
   const [reservedId, setReservedId] = React.useState('');
 
+  // Cargar nichos disponibles
+  React.useEffect(() => {
+    const fetchAvailableNiches = async () => {
+      try {
+        setLoading(true);
+        const response = await getAvailableNiches();
+        setAvailable(response);
+      } catch (error) {
+        console.error('Error al cargar nichos disponibles:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAvailableNiches();
+  }, []);
+
   const filtered = available.filter(n =>
-    (sector ? n.sector === sector : true) &&
-    (tipo ? n.tipo === tipo : true)
+    (tipo ? n.type === tipo : true)
   );
 
   const handleView = (_e, v) => { if (v) setView(v); };
@@ -107,19 +114,31 @@ export default function AvailableNiches() {
   const onVer = (row) => { setSelected(row); setDetailsOpen(true); };
   const onCloseDetails = () => setDetailsOpen(false);
 
-  // Confirmar desde el diálogo de detalles -> mostrar diálogo de reserva exitosa
-  const onConfirmDetails = (row) => {
-    setDetailsOpen(false);
-    // Aquí podrías llamar a tu API de reserva y, si responde OK, mostrar el success
-    setReservedId(row.id);
-    setReserveOpen(true);
+  // Confirmar desde el diálogo de detalles -> reservar nicho
+  const onConfirmDetails = async (row) => {
+    try {
+      await updateNiche(row.id, { status: 'reservado' });
+      setDetailsOpen(false);
+      setReservedId(row.number);
+      setReserveOpen(true);
+      // Actualizar lista de disponibles
+      setAvailable(prev => prev.filter(n => n.id !== row.id));
+    } catch (error) {
+      console.error('Error al reservar nicho:', error);
+    }
   };
 
-  // Click en botón "Reservar" de la tabla -> mostrar directamente el success (o abre detalles, como prefieras)
-  const onReservar = (row) => {
-    // Si quieres pasar por confirmación previa, en vez de esto puedes llamar onVer(row)
-    setReservedId(row.id);
-    setReserveOpen(true);
+  // Click en botón "Reservar" de la tabla
+  const onReservar = async (row) => {
+    try {
+      await updateNiche(row.id, { status: 'reservado' });
+      setReservedId(row.number);
+      setReserveOpen(true);
+      // Actualizar lista de disponibles
+      setAvailable(prev => prev.filter(n => n.id !== row.id));
+    } catch (error) {
+      console.error('Error al reservar nicho:', error);
+    }
   };
 
   return (
@@ -138,14 +157,7 @@ export default function AvailableNiches() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <TextField select fullWidth label="Sector" value={sector} onChange={(e) => setSector(e.target.value)}>
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="A">A</MenuItem>
-                <MenuItem value="B">B</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <TextField select fullWidth label="Tipo de Nicho" value={tipo} onChange={(e) => setTipo(e.target.value)}>
                 <MenuItem value="">Todos</MenuItem>
                 <MenuItem value="Individual">Individual</MenuItem>
@@ -157,7 +169,7 @@ export default function AvailableNiches() {
                 Filtrar
               </Button>
             </Grid>
-            <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+            <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
               <ToggleButtonGroup size="small" color="primary" exclusive value={view} onChange={handleView}>
                 <ToggleButton value="grid">Vista Grid</ToggleButton>
                 <ToggleButton value="list">Vista Lista</ToggleButton>
@@ -175,14 +187,18 @@ export default function AvailableNiches() {
           </Typography>
           <Divider />
 
+          {loading ? (
+            <Stack alignItems="center" sx={{ py: 4 }}>
+              <CircularProgress />
+            </Stack>
+          ) : (
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Número</TableCell>
-                <TableCell>Sector</TableCell>
                 <TableCell>Tipo</TableCell>
-                <TableCell>Precio</TableCell>
-                <TableCell>Ubicación</TableCell>
+                <TableCell>Propietario</TableCell>
+                <TableCell>Dirección</TableCell>
                 <TableCell>Acciones</TableCell>
               </TableRow>
               
@@ -190,13 +206,12 @@ export default function AvailableNiches() {
             <TableBody>
               {filtered.map((n) => (
                 <TableRow key={n.id} hover>
-                  <TableCell>{n.id}</TableCell>
-                  <TableCell>{n.sector}</TableCell>
+                  <TableCell>{n.number}</TableCell>
                   <TableCell>
-                    <Chip icon={<PersonIcon />} label={n.tipo} variant="outlined" />
+                    <Chip icon={<PersonIcon />} label={n.type || 'Individual'} variant="outlined" />
                   </TableCell>
-                  <TableCell>{n.precio}</TableCell>
-                  <TableCell>{n.ubicacion}</TableCell>
+                  <TableCell>{n.owner || 'N/A'}</TableCell>
+                  <TableCell>{n.address || 'N/A'}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1.5}>
                       <Button variant="contained" startIcon={<VisibilityIcon />} onClick={() => onVer(n)}>
@@ -211,6 +226,7 @@ export default function AvailableNiches() {
               ))}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
 

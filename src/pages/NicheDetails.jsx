@@ -23,17 +23,36 @@ import {
   TableContainer,
   Paper,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
-import { mockNiches } from "../data.js";
+import { getNicheById, updateNiche, deleteNiche } from "../Services/Niches";
+import { insertOccupant } from "../Services/NicheOccupantsService";
+import { getPaymentsByNicheId, insertPayment, createPaymentFromFile } from "../Services/Payments";
 
 export default function NicheDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const niche = mockNiches.find((n) => n.id === id) || mockNiches[0];
+  
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [niche, setNiche] = React.useState(null);
+
+  /* ================= FORM STATE ================= */
+  const [form, setForm] = React.useState({
+    number: "",
+    lastPaymentYear: "",
+    ownerId: "",
+    owner: "",
+    phone: "",
+    address: "",
+    email: "",
+    notes: "",
+  });
 
   /* ================= DIFUNTOS ================= */
 
@@ -46,68 +65,169 @@ export default function NicheDetails() {
     fechaDefuncion: "",
   });
 
-  const [difuntos, setDifuntos] = React.useState(() => {
-    if (Array.isArray(niche.deceased)) {
-      return niche.deceased.map((d) => ({
-        nombre: d,
-        apellidos: "",
-        fechaNacimiento: "",
-        fechaDefuncion: "",
-      }));
-    }
-    return niche.deceased
-      ? [{ nombre: niche.deceased, apellidos: "", fechaNacimiento: "", fechaDefuncion: "" }]
-      : [];
-  });
-
-  const handleDifuntoChange = (key) => (e) =>
-    setDifunto((prev) => ({ ...prev, [key]: e.target.value }));
-
-  const guardarDifunto = () => {
-    setDifuntos((prev) => [...prev, difunto]);
-    setDifunto({
-      nombre: "",
-      apellidos: "",
-      fechaNacimiento: "",
-      fechaDefuncion: "",
-    });
-    setOpenDifunto(false);
-  };
+  const [difuntos, setDifuntos] = React.useState([]);
 
   /* ================= ANUALIDADES ================= */
 
   const [openDelete, setOpenDelete] = React.useState(false);
   const [openSnackbar, setOpenSnackbar] = React.useState(false);
   const [fileError, setFileError] = React.useState("");
-  const [annualidades, setAnnualidades] = React.useState([
-    {
-      year: niche.lastPaymentYear || new Date(niche.lastPayment).getFullYear(),
-      name: "boleta_compra.pdf",
-      url: "",
-      type: "application/pdf",
-      date: new Date(niche.lastPayment || Date.now()).toLocaleDateString(),
-      tipoBoleta: "Compra",
-    },
-  ]);
+  const [annualidades, setAnnualidades] = React.useState([]);
   const [selectedFile, setSelectedFile] = React.useState(null);
   const [openViewer, setOpenViewer] = React.useState(false);
 
-  const handleFileChange = (event) => {
+  /* ================= LOAD DATA ================= */
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const nicheData = await getNicheById(Number(id));
+        setNiche(nicheData);
+        
+        // Actualizar formulario con datos del nicho
+        setForm({
+          number: nicheData.number || "",
+          lastPaymentYear: nicheData.lastPaymentYear || new Date().getFullYear().toString(),
+          ownerId: nicheData.identification || "",
+          owner: nicheData.owner || "",
+          phone: nicheData.phone || "",
+          address: nicheData.address || "",
+          email: nicheData.email || "",
+          notes: nicheData.description || "",
+        });
+
+        // Cargar ocupantes
+        if (nicheData.occupants && nicheData.occupants.length > 0) {
+          setDifuntos(nicheData.occupants.map(o => ({
+            id: o.id,
+            nombre: o.name || "",
+            apellidos: o.lastName || "",
+            fechaNacimiento: o.birthDate || "",
+            fechaDefuncion: o.deathDate || "",
+          })));
+        }
+
+        // Cargar pagos
+        const payments = await getPaymentsByNicheId(Number(id));
+        if (payments && payments.length > 0) {
+          setAnnualidades(payments.map(p => ({
+            id: p.id,
+            year: p.year || new Date(p.paymentDate).getFullYear(),
+            name: p.documentName,
+            url: p.documentBase64 ? `data:${p.documentMimeType};base64,${p.documentBase64}` : "",
+            type: p.documentMimeType,
+            date: new Date(p.paymentDate || p.createdAt).toLocaleDateString(),
+            tipoBoleta: p.year === nicheData.lastPaymentYear ? "Compra" : "Anualidad",
+          })));
+        }
+      } catch (err) {
+        setError("Error al cargar los datos del nicho");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchData();
+    }
+  }, [id]);
+
+  const handleFormChange = (key) => (e) =>
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const handleDifuntoChange = (key) => (e) =>
+    setDifunto((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const guardarDifunto = async () => {
+    try {
+      // Guardar difunto en la API
+      await insertOccupant({
+        nicheId: Number(id),
+        name: difunto.nombre,
+        lastName: difunto.apellidos,
+        birthDate: difunto.fechaNacimiento,
+        deathDate: difunto.fechaDefuncion,
+      });
+      
+      setDifuntos((prev) => [...prev, difunto]);
+      setDifunto({
+        nombre: "",
+        apellidos: "",
+        fechaNacimiento: "",
+        fechaDefuncion: "",
+      });
+      setOpenDifunto(false);
+    } catch (err) {
+      setError("Error al guardar el difunto");
+    }
+  };
+
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    const newEntry = {
-      year: new Date().getFullYear(),
-      name: file.name,
-      url: URL.createObjectURL(file),
-      type: file.type,
-      date: new Date().toLocaleDateString(),
-      tipoBoleta: "Anualidad",
-    };
+    try {
+      // Crear y guardar el pago
+      const paymentData = await createPaymentFromFile(file, Number(id));
+      await insertPayment(paymentData);
 
-    setAnnualidades((prev) => [newEntry, ...prev]);
-    setOpenSnackbar(true);
+      const newEntry = {
+        year: new Date().getFullYear(),
+        name: file.name,
+        url: URL.createObjectURL(file),
+        type: file.type,
+        date: new Date().toLocaleDateString(),
+        tipoBoleta: "Anualidad",
+      };
+
+      setAnnualidades((prev) => [newEntry, ...prev]);
+      setOpenSnackbar(true);
+    } catch (err) {
+      setFileError("Error al cargar el archivo");
+    }
   };
+
+  const handleUpdate = async () => {
+    try {
+      setSaving(true);
+      await updateNiche(Number(id), {
+        number: form.number,
+        owner: form.owner,
+        identification: form.ownerId,
+        phone: form.phone,
+        address: form.address,
+        email: form.email,
+        description: form.notes,
+        type: niche?.type || "Individual",
+        status: niche?.status || "ocupado",
+        is_active: true,
+      });
+      navigate("/");
+    } catch (err) {
+      setError("Error al actualizar el nicho");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteNiche(Number(id));
+      navigate("/");
+    } catch (err) {
+      setError("Error al eliminar el nicho");
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -145,41 +265,81 @@ export default function NicheDetails() {
                 Datos del Nicho
               </Typography>
 
+              {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <TextField label="Número de Nicho" defaultValue={niche.number} fullWidth />
+                  <TextField 
+                    label="Número de Nicho" 
+                    value={form.number} 
+                    onChange={handleFormChange("number")}
+                    fullWidth 
+                  />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
                   <TextField
                     label="Año Última Anualidad"
-                    defaultValue={niche.lastPaymentYear || new Date(niche.lastPayment).getFullYear()}
+                    value={form.lastPaymentYear}
+                    onChange={handleFormChange("lastPaymentYear")}
                     fullWidth
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField label="Cédula Propietario" defaultValue={niche.ownerId} fullWidth />
+                  <TextField 
+                    label="Cédula Propietario" 
+                    value={form.ownerId} 
+                    onChange={handleFormChange("ownerId")}
+                    fullWidth 
+                  />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField label="Nombre Propietario" defaultValue={niche.owner} fullWidth />
+                  <TextField 
+                    label="Nombre Propietario" 
+                    value={form.owner} 
+                    onChange={handleFormChange("owner")}
+                    fullWidth 
+                  />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField label="Teléfono" defaultValue={niche.phone} fullWidth />
+                  <TextField 
+                    label="Teléfono" 
+                    value={form.phone} 
+                    onChange={handleFormChange("phone")}
+                    fullWidth 
+                  />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField label="Dirección" defaultValue={niche.address} fullWidth />
+                  <TextField 
+                    label="Dirección" 
+                    value={form.address} 
+                    onChange={handleFormChange("address")}
+                    fullWidth 
+                  />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField label="Correo" defaultValue={niche.email} fullWidth />
+                  <TextField 
+                    label="Correo" 
+                    value={form.email} 
+                    onChange={handleFormChange("email")}
+                    fullWidth 
+                  />
                 </Grid>
 
                 <Grid item xs={12}>
-                  <TextField label="Descripción" defaultValue={niche.notes} multiline minRows={3} fullWidth />
+                  <TextField 
+                    label="Descripción" 
+                    value={form.notes} 
+                    onChange={handleFormChange("notes")}
+                    multiline 
+                    minRows={3} 
+                    fullWidth 
+                  />
                 </Grid>
               </Grid>
             </Box>
@@ -299,23 +459,38 @@ export default function NicheDetails() {
                 color="error"
                 variant="outlined"
                 onClick={() => setOpenDelete(true)}
+                disabled={saving}
               >
                 Eliminar
               </Button>
 
               <Stack direction="row" spacing={2}>
-                <Button variant="outlined" onClick={() => navigate("/")}>
+                <Button variant="outlined" onClick={() => navigate("/")} disabled={saving}>
                   Cancelar
                 </Button>
 
-                <Button color="success" variant="contained" onClick={() => navigate("/")}>
-                  Actualizar
+                <Button 
+                  color="success" 
+                  variant="contained" 
+                  onClick={handleUpdate}
+                  disabled={saving}
+                >
+                  {saving ? <CircularProgress size={24} color="inherit" /> : "Actualizar"}
                 </Button>
               </Stack>
             </Stack>
 
           </Stack>
         </CardContent>
+
+        {/* CONFIRM DELETE DIALOG */}
+        <ConfirmDialog
+          open={openDelete}
+          title="Eliminar Nicho"
+          message="¿Está seguro que desea eliminar este nicho? Esta acción no se puede deshacer."
+          onCancel={() => setOpenDelete(false)}
+          onConfirm={handleDelete}
+        />
 
         {/* DIALOG DIFUNTO */}
         <Dialog open={openDifunto} onClose={() => setOpenDifunto(false)} fullWidth>

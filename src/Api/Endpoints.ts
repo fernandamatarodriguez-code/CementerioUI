@@ -12,7 +12,7 @@ const endpoints = {
   niche: {
     addNiche: '/api/niches',
     getNiches: '/api/niches',
-    getNicheById: '/api/niches/{id}',  
+    getNicheById: '/api/niches',  
     updateNiche: '/api/niches/{id}'
   },
   payments: {

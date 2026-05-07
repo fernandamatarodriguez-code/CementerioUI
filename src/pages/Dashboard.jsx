@@ -250,7 +250,7 @@ export default function Dashboard() {
                             color="secondary"
                             size="small"
                             sx={{ borderRadius: 999 }}
-                            onClick={() => navigate(`/Niche/Details/${r.id}`)}
+                            onClick={() => navigate(`/niches/${r.id}`)}
                           >
                             Actualizar
                           </Button>

@@ -27,7 +27,6 @@ export default function App() {
         <Route path="/niches/add" element={<AddNiche />} />
         <Route path="/niches/available" element={<AvailableNiches />} />
         <Route path="/niches/:id" element={<NicheDetails />} />
-        <Route path="/Niche/Details" element={<NicheDetails />} />
       </Route>
     </Routes>
   );

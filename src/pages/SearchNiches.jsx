@@ -1,11 +1,11 @@
 import * as React from 'react'
 import {
   Card, CardContent, Typography, Stack, List, ListItem, ListItemText,
-  Button, Pagination, Divider, Chip
+  Button, Pagination, Divider, Chip, CircularProgress
 } from '@mui/material'
 import SearchBar from '../components/SearchBar.jsx'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import { mockNiches } from '../data.js'
+import { searchNiches } from '../Services/Niches'
 import { Link as RouterLink } from 'react-router-dom'
 
 
@@ -13,18 +13,25 @@ export default function SearchNiches(){
   const [query, setQuery] = React.useState('')
   const [results, setResults] = React.useState([])
   const [page, setPage] = React.useState(1)
+  const [loading, setLoading] = React.useState(false)
 
   const PAGE_SIZE = 5 // <- cambia aquí el tamaño de página
 
-  const onSubmit = ()=>{
+  const onSubmit = async () => {
     const q = query.trim().toLowerCase()
-    const filtered = mockNiches.filter(n =>
-      n.deceased.toLowerCase().includes(q) ||
-      n.owner.toLowerCase().includes(q) ||
-      String(n.number).toLowerCase().includes(q)
-    )
-    setResults(filtered)
-    setPage(1) // reset a la primera página en cada búsqueda
+    if (!q) return;
+    
+    setLoading(true);
+    try {
+      const response = await searchNiches(q);
+      setResults(response);
+      setPage(1); // reset a la primera página en cada búsqueda
+    } catch (error) {
+      console.error('Error al buscar nichos:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // datos de la página actual
@@ -58,7 +65,11 @@ export default function SearchNiches(){
           </Stack>
           <Divider sx={{ mb: 2 }} />
 
-          {results.length === 0 ? (
+          {loading ? (
+            <Stack alignItems="center" sx={{ py: 4 }}>
+              <CircularProgress />
+            </Stack>
+          ) : results.length === 0 ? (
             <Typography color="text.secondary">Sin resultados.</Typography>
           ) : (
             <>
@@ -78,13 +89,15 @@ export default function SearchNiches(){
                     }
                   >
                     <ListItemText
-                      primary={r.deceased}
+                      primary={r.occupants && r.occupants.length > 0 
+                        ? r.occupants.map(o => o.name).join(', ') 
+                        : 'Sin ocupantes'}
                       secondary={
                         <span>
                           <strong>Propietario:</strong> {r.owner}<br/>
                           <strong>Nicho:</strong> {r.number}&nbsp;&nbsp;
                           <strong>Última Anualidad:</strong>{' '}
-                          {new Date(r.lastPayment).toLocaleDateString()}
+                          {r.lastPaymentYear || 'N/A'}
                         </span>
                       }
                     />
