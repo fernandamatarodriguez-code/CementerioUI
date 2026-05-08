@@ -1,4 +1,4 @@
 export interface CreateNicheOccupantDto {
   nicheId: number;
-    name: string;
+  name: string;
 }

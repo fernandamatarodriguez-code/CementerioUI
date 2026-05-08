@@ -59,8 +59,8 @@ export default function NicheDetails() {
   const [openDifunto, setOpenDifunto] = React.useState(false);
 
   const [difunto, setDifunto] = React.useState({
-    nombre: "",
-    apellidos: "",
+    name: "",
+    lastName: "",
     fechaNacimiento: "",
     fechaDefuncion: "",
   });
@@ -101,8 +101,8 @@ export default function NicheDetails() {
         if (nicheData.occupants && nicheData.occupants.length > 0) {
           setDifuntos(nicheData.occupants.map(o => ({
             id: o.id,
-            nombre: o.name || "",
-            apellidos: o.lastName || "",
+            name: o.name || "",
+            lastName: o.lastName || "",
             fechaNacimiento: o.fechaNacimiento || "",
             fechaDefuncion: o.fechaDefuncion || "",
           })));
@@ -146,16 +146,16 @@ export default function NicheDetails() {
       // Guardar difunto en la API
       await insertOccupant({
         nicheId: Number(id),
-        name: difunto.nombre,
-        lastName: difunto.apellidos,
+        name: difunto.name,
+        lastName: difunto.lastName,
         fechaNacimiento: difunto.fechaNacimiento,
         fechaDefuncion: difunto.fechaDefuncion,
       });
       
       setDifuntos((prev) => [...prev, difunto]);
       setDifunto({
-        nombre: "",
-        apellidos: "",
+        name: "",
+        lastName: "",
         fechaNacimiento: "",
         fechaDefuncion: "",
       });
@@ -376,8 +376,8 @@ export default function NicheDetails() {
                     <TableBody>
                       {difuntos.map((d, i) => (
                         <TableRow key={i}>
-                          <TableCell>{d.nombre}</TableCell>
-                          <TableCell>{d.apellidos}</TableCell>
+                          <TableCell>{d.name}</TableCell>
+                          <TableCell>{d.lastName}</TableCell>
                           <TableCell>{d.fechaNacimiento ? new Date(d.fechaNacimiento).toLocaleDateString() : ""}</TableCell>
                           <TableCell>{d.fechaDefuncion ? new Date(d.fechaDefuncion).toLocaleDateString() : ""}</TableCell>
                         </TableRow>
@@ -498,8 +498,8 @@ export default function NicheDetails() {
           <DialogTitle>Agregar Difunto</DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField label="Nombre" onChange={handleDifuntoChange("nombre")} />
-              <TextField label="Apellidos" onChange={handleDifuntoChange("apellidos")} />
+              <TextField label="Nombre" onChange={handleDifuntoChange("name")} />
+              <TextField label="Apellidos" onChange={handleDifuntoChange("lastName")} />
               <TextField type="date" label="Fecha Nacimiento" InputLabelProps={{ shrink: true }} onChange={handleDifuntoChange("fechaNacimiento")} />
               <TextField type="date" label="Fecha Defunción" InputLabelProps={{ shrink: true }} onChange={handleDifuntoChange("fechaDefuncion")} />
             </Stack>
