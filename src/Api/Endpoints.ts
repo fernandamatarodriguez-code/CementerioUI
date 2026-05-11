@@ -18,7 +18,8 @@ const endpoints = {
   payments: {
     addPayment: '/api/payments',
     getPayments: '/api/payments', 
-    updatePayment: '/api/payments/{id}'
+    updatePayment: '/api/payments/{id}',
+    getDocument: '/api/payments/{id}/document'
   },
   users: {
     updateUser: '/api/users/{id}', 

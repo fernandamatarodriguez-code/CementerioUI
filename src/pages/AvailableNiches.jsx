@@ -191,41 +191,90 @@ export default function AvailableNiches() {
             <Stack alignItems="center" sx={{ py: 4 }}>
               <CircularProgress />
             </Stack>
-          ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Número</TableCell>
-                <TableCell>Tipo</TableCell>
-                <TableCell>Propietario</TableCell>
-                <TableCell>Dirección</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-              
-            </TableHead>
-            <TableBody>
+          ) : view === 'grid' ? (
+            // Vista Grid
+            <Grid container spacing={2} sx={{ mt: 2 }}>
               {filtered.map((n) => (
-                <TableRow key={n.id} hover>
-                  <TableCell>{n.number}</TableCell>
-                  <TableCell>
-                    <Chip icon={<PersonIcon />} label={n.type || 'Individual'} variant="outlined" />
-                  </TableCell>
-                  <TableCell>{n.owner || 'N/A'}</TableCell>
-                  <TableCell>{n.address || 'N/A'}</TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1.5}>
-                      <Button variant="contained" startIcon={<VisibilityIcon />} onClick={() => onVer(n)}>
-                        Ver
-                      </Button>
-                      <Button variant="outlined" onClick={() => onReservar(n)}>
-                        Reservar
-                      </Button>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
+                <Grid item xs={12} sm={6} md={4} lg={3} key={n.id}>
+                  <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                        Nicho #{n.number}
+                      </Typography>
+                      <Chip 
+                        icon={<PersonIcon />} 
+                        label={n.type || 'Individual'} 
+                        variant="outlined" 
+                        size="small"
+                        sx={{ mb: 1.5 }}
+                      />
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Propietario:</strong> {n.owner || 'N/A'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Dirección:</strong> {n.address || 'N/A'}
+                      </Typography>
+                    </CardContent>
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <Stack direction="row" spacing={1}>
+                        <Button 
+                          variant="contained" 
+                          size="small" 
+                          startIcon={<VisibilityIcon />} 
+                          onClick={() => onVer(n)}
+                          fullWidth
+                        >
+                          Ver
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          onClick={() => onReservar(n)}
+                          fullWidth
+                        >
+                          Reservar
+                        </Button>
+                      </Stack>
+                    </Box>
+                  </Card>
+                </Grid>
               ))}
-            </TableBody>
-          </Table>
+            </Grid>
+          ) : (
+            // Vista Lista (Tabla)
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Número</TableCell>
+                  <TableCell>Tipo</TableCell>
+                  <TableCell>Propietario</TableCell>
+                  <TableCell>Dirección</TableCell>
+                  <TableCell>Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filtered.map((n) => (
+                  <TableRow key={n.id} hover>
+                    <TableCell>{n.number}</TableCell>
+                    <TableCell>
+                      <Chip icon={<PersonIcon />} label={n.type || 'Individual'} variant="outlined" />
+                    </TableCell>
+                    <TableCell>{n.owner || 'N/A'}</TableCell>
+                    <TableCell>{n.address || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1.5}>
+                        <Button variant="contained" startIcon={<VisibilityIcon />} onClick={() => onVer(n)}>
+                          Ver
+                        </Button>
+                        <Button variant="outlined" onClick={() => onReservar(n)}>
+                          Reservar
+                        </Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

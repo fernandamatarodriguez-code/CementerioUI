@@ -1,4 +1,5 @@
 import ApiService from "../Api/ApiService";
+import axiosInstance from "../Api/AxiosInstance";
 import endpoints from "../Api/Endpoints";
 import type { PaymentDto } from "../Models/PaymentDto";
 import type { PaymentResponseDto, PaymentListResponseDto } from "../Models/PaymentResponseDto";
@@ -33,10 +34,29 @@ export const getPaymentsByNicheId = async (nicheId: number): Promise<PaymentResp
 /**
  * Obtiene un pago por su ID
  * @param id - ID del pago
+ * @param includeDocument - Si se debe incluir el documento en base64
  * @returns Datos del pago
  */
-export const getPaymentById = async (id: number): Promise<PaymentResponseDto> => {
-  return await ApiService.getById<PaymentResponseDto>(endpoints.payments.getPayments, id);
+export const getPaymentById = async (id: number, includeDocument: boolean = true): Promise<PaymentResponseDto> => {
+  // El backend no tiene endpoint individual, usar lista con filtro
+  const payments = await ApiService.get<PaymentResponseDto[]>(endpoints.payments.getPayments, 
+    includeDocument ? { id, includeDocument: true } : { id }
+  );
+  if (payments && payments.length > 0) {
+    return payments[0];
+  }
+  throw new Error('Pago no encontrado');
+};
+
+/**
+ * Obtiene el documento de un pago directamente
+ * @param id - ID del pago
+ * @returns Blob del documento
+ */
+export const getPaymentDocument = async (id: number): Promise<Blob> => {
+  const url = endpoints.payments.getDocument.replace('{id}', id.toString());
+  const response = await axiosInstance.get(url, { responseType: 'blob' });
+  return response.data;
 };
 
 /**
