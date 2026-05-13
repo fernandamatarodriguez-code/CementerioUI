@@ -355,6 +355,9 @@ export default function NicheDetails() {
                     value={form.number} 
                     onChange={handleFormChange("number")}
                     fullWidth 
+                     InputProps={{
+                      readOnly: true,
+                      }}
                   />
                 </Grid>
 
@@ -609,14 +612,6 @@ export default function NicheDetails() {
         <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
           <Alert severity="success">Boleta cargada correctamente</Alert>
         </Snackbar>
-
-        <ConfirmDialog
-          open={openDelete}
-          title="Eliminar Nicho"
-          message="¿Está seguro de eliminar este nicho?"
-          onCancel={() => setOpenDelete(false)}
-          onConfirm={() => navigate("/")}
-        />
       </Card>
     </Box>
   );

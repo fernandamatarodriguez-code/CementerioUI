@@ -11,6 +11,7 @@ const endpoints = {
    },
   niche: {
     addNiche: '/api/niches',
+    allocateNiche: '/api/niches',
     getNiches: '/api/niches',
     getNicheById: '/api/niches',  
     updateNiche: '/api/niches/{id}'

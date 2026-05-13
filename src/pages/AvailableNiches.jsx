@@ -29,7 +29,7 @@ function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
             {data.type}
           </Typography>
           <Typography><strong>Estado:</strong> {data.status}</Typography>
-          <Typography><strong>Dirección:</strong> {data.address}</Typography>
+          <Typography><strong>Ubicación:</strong> {data.address}</Typography>
           <Typography><strong>Descripción:</strong> {data.description}</Typography>
           <Typography align="center" sx={{ mt:8}}>
             ¿Desea reservar este nicho?
@@ -38,7 +38,8 @@ function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button variant="outlined" onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" color="secondary" onClick={() => onConfirm?.(data)}>
+        <Button variant="contained" color="secondary" 
+        onClick={() => onConfirm(data)}>
           Confirmar
         </Button>
       </DialogActions>
@@ -87,6 +88,7 @@ export default function AvailableNiches() {
 
   const [reserveOpen, setReserveOpen] = React.useState(false);
   const [reservedId, setReservedId] = React.useState('');
+  const [reservedNiche, setReservedNiche] = React.useState(null);
 
   // Cargar nichos disponibles
   React.useEffect(() => {
@@ -114,18 +116,10 @@ export default function AvailableNiches() {
   const onVer = (row) => { setSelected(row); setDetailsOpen(true); };
   const onCloseDetails = () => setDetailsOpen(false);
 
-  // Confirmar desde el diálogo de detalles -> reservar nicho
-  const onConfirmDetails = async (row) => {
-    try {
-      await updateNiche(row.id, { status: 'reservado' });
-      setDetailsOpen(false);
-      setReservedId(row.number);
-      setReserveOpen(true);
-      // Actualizar lista de disponibles
-      setAvailable(prev => prev.filter(n => n.id !== row.id));
-    } catch (error) {
-      console.error('Error al reservar nicho:', error);
-    }
+  // Confirmar desde el diálogo de detalles -> ir a asignar nicho
+  const onConfirmDetails = (row) => {
+    setDetailsOpen(false);
+    navigate('/niches/allocate', { state: { niche: row } });
   };
 
   // Click en botón "Reservar" de la tabla
@@ -212,7 +206,7 @@ export default function AvailableNiches() {
                         <strong>Propietario:</strong> {n.owner || 'N/A'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        <strong>Dirección:</strong> {n.address || 'N/A'}
+                        <strong>Ubicación:</strong> {n.address || 'N/A'}
                       </Typography>
                     </CardContent>
                     <Box sx={{ p: 2, pt: 0 }}>
@@ -225,14 +219,6 @@ export default function AvailableNiches() {
                           fullWidth
                         >
                           Ver
-                        </Button>
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          onClick={() => onReservar(n)}
-                          fullWidth
-                        >
-                          Reservar
                         </Button>
                       </Stack>
                     </Box>
@@ -248,7 +234,7 @@ export default function AvailableNiches() {
                   <TableCell>Número</TableCell>
                   <TableCell>Tipo</TableCell>
                   <TableCell>Propietario</TableCell>
-                  <TableCell>Dirección</TableCell>
+                  <TableCell>Ubicación</TableCell>
                   <TableCell>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -265,9 +251,6 @@ export default function AvailableNiches() {
                       <Stack direction="row" spacing={1.5}>
                         <Button variant="contained" startIcon={<VisibilityIcon />} onClick={() => onVer(n)}>
                           Ver
-                        </Button>
-                        <Button variant="outlined" onClick={() => onReservar(n)}>
-                          Reservar
                         </Button>
                       </Stack>
                     </TableCell>
@@ -293,8 +276,7 @@ export default function AvailableNiches() {
         onClose={() => setReserveOpen(false)}
         onConfirm={() => {
           setReserveOpen(false);
-          // navegar o continuar flujo de venta
-          // navigate(`/sales/new?niche=${reservedId}`);
+          navigate('/niches/allocate', { state: { niche: reservedNiche } });
         }}
       />
     </Box>

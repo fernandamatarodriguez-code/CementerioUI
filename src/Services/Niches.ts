@@ -6,12 +6,21 @@ import type { NicheResponseDto, NicheListResponseDto } from "../Models/NicheResp
 // ============== NICHES ==============
 
 /**
- * Agrega un nuevo nicho
+ * Agrega un nuevo nicho vacío
  * @param niche - Datos del nicho a crear
  * @returns Nicho creado
  */
 export const addNiche = async (niche: NichesDto): Promise<NicheResponseDto> => {
   return await ApiService.post<NicheResponseDto>(endpoints.niche.addNiche, niche);
+};
+
+/**
+ * Asigna un nicho reservado
+ * @param niche - Datos del nicho a crear
+ * @returns Nicho creado
+ */
+export const allocateNiche = async (niche: NichesDto): Promise<NicheResponseDto> => {
+  return await ApiService.post<NicheResponseDto>(endpoints.niche.allocateNiche, niche);
 };
 
 /**
