@@ -78,7 +78,7 @@ export default function LoginPage() {
                     Olvido Contraseña
                   </Button>
 
-                  <Button type="submit" variant="contained" color="secondary">
+                  <Button type="submit" variant="contained" color="success">
                     Iniciar Sesión
                   </Button>
                 </Stack>

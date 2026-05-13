@@ -9,7 +9,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
-import { getAvailableNiches, updateNiche } from '../Services/Niches';
+import { getAvailableNiches } from '../Services/Niches';
 
 // ---------- DIALOGO: Detalles ----------
 function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
@@ -38,33 +38,9 @@ function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button variant="outlined" onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" color="secondary" 
+        <Button variant="contained" color="success" 
         onClick={() => onConfirm(data)}>
           Confirmar
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-// ---------- DIALOGO: Reserva exitosa ----------
-function ReserveResultDialog({ open, onClose, nicheId, onConfirm }) {
-  return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>
-        Nicho Reservado
-      </DialogTitle>
-      <DialogContent sx={{ pt: 1 }}>
-        <Typography align="center" sx={{ color: 'text.secondary' }}>
-          El nicho <strong>{nicheId}</strong> ha sido reservado exitosamente. Proceda con
-          el proceso de venta.
-        </Typography>
-      </DialogContent>
-      <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-        <Button variant="outlined" onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" color="secondary" onClick={onConfirm}>
-          Confirmar
-          
         </Button>
       </DialogActions>
     </Dialog>
@@ -85,10 +61,6 @@ export default function AvailableNiches() {
   // diálogos
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const [selected, setSelected] = React.useState(null);
-
-  const [reserveOpen, setReserveOpen] = React.useState(false);
-  const [reservedId, setReservedId] = React.useState('');
-  const [reservedNiche, setReservedNiche] = React.useState(null);
 
   // Cargar nichos disponibles
   React.useEffect(() => {
@@ -122,19 +94,6 @@ export default function AvailableNiches() {
     navigate('/niches/allocate', { state: { niche: row } });
   };
 
-  // Click en botón "Reservar" de la tabla
-  const onReservar = async (row) => {
-    try {
-      await updateNiche(row.id, { status: 'reservado' });
-      setReservedId(row.number);
-      setReserveOpen(true);
-      // Actualizar lista de disponibles
-      setAvailable(prev => prev.filter(n => n.id !== row.id));
-    } catch (error) {
-      console.error('Error al reservar nicho:', error);
-    }
-  };
-
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
       {/* Título + volver */}
@@ -155,7 +114,7 @@ export default function AvailableNiches() {
               <TextField select fullWidth label="Tipo de Nicho" value={tipo} onChange={(e) => setTipo(e.target.value)}>
                 <MenuItem value="">Todos</MenuItem>
                 <MenuItem value="Individual">Individual</MenuItem>
-                <MenuItem value="Familiar">Familiar</MenuItem>
+                <MenuItem value="Familiar">Doble</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12} md={2}>
@@ -262,22 +221,12 @@ export default function AvailableNiches() {
         </CardContent>
       </Card>
 
-      {/* Diálogos */}
+      {/* Diálogo */}
       <NicheDetailsDialog
         open={detailsOpen}
         onClose={onCloseDetails}
         data={selected}
         onConfirm={onConfirmDetails}
-      />
-
-      <ReserveResultDialog
-        open={reserveOpen}
-        nicheId={reservedId}
-        onClose={() => setReserveOpen(false)}
-        onConfirm={() => {
-          setReserveOpen(false);
-          navigate('/niches/allocate', { state: { niche: reservedNiche } });
-        }}
       />
     </Box>
   );

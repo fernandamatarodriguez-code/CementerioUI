@@ -198,11 +198,11 @@ export default function Header({ user = "Usuario", onLogout }) {
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setOpenPassword(false)}>
+          <Button variant="outlined"onClick={() => setOpenPassword(false)} sx={{ borderWidth: 2 }}>
             Cancelar
           </Button>
 
-          <Button variant="contained" onClick={handleSavePassword}>
+          <Button variant="contained" color="success" onClick={handleSavePassword}>
             Aceptar
           </Button>
         </DialogActions>
