@@ -31,7 +31,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { getNicheById, updateNiche, deleteNiche } from "../Services/Niches";
 import { insertOccupant } from "../Services/NicheOccupantsService";
-import { getPaymentsByNicheId, insertPayment, createPaymentFromFile, getPaymentById, getPaymentDocument } from "../Services/Payments";
+import { insertPayment, createPaymentFromFile, getPaymentById, getPaymentDocument } from "../Services/Payments";
 
 export default function NicheDetails() {
   const { id } = useParams();
@@ -109,20 +109,27 @@ export default function NicheDetails() {
           })));
         }
 
-        // Cargar pagos
-        const payments = await getPaymentsByNicheId(Number(id));
-        console.log("Pagos cargados:", payments); // Para debug
-        if (payments && payments.length > 0) {
-          setAnnualidades(payments.map(p => {
-            console.log("Pago individual:", p); // Ver estructura de cada pago
+        // Cargar pagos (ya vienen en nicheData.payments)
+        if (nicheData.payments && nicheData.payments.length > 0) {
+          setAnnualidades(nicheData.payments.map(p => {
+            // El documento viene como Buffer, convertir a base64
+            let docUrl = "";
+            if (p.document?.data && Array.isArray(p.document.data)) {
+              const bytes = new Uint8Array(p.document.data);
+              let binary = '';
+              bytes.forEach(b => binary += String.fromCharCode(b));
+              const base64 = btoa(binary);
+              docUrl = `data:${p.documentMimeType || 'application/pdf'};base64,${base64}`;
+            }
+            
             return {
               id: p.id,
-              year: p.year || new Date(p.paymentDate).getFullYear(),
+              year: p.paidAt ? new Date(p.paidAt).getFullYear() : new Date().getFullYear(),
               name: p.documentName,
-              url: p.documentBase64 ? `data:${p.documentMimeType};base64,${p.documentBase64}` : (p.documentUrl || ""),
-              type: p.documentMimeType,
-              date: new Date(p.paymentDate || p.createdAt).toLocaleDateString(),
-              tipoBoleta: p.year === nicheData.lastPaymentYear ? "Compra" : "Anualidad",
+              url: docUrl,
+              type: p.documentMimeType || 'application/pdf',
+              date: p.paidAt ? new Date(p.paidAt).toLocaleDateString() : "",
+              tipoBoleta: p.documentType === "compra" ? "Compra" : "Anualidad",
             };
           }));
         }
@@ -605,7 +612,11 @@ export default function NicheDetails() {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpenViewer(false)}>Cerrar</Button>
+            <Button variant="outlined" onClick={() => setOpenViewer(false)} sx={{ borderWidth: 2 }}>Cerrar</Button>
+  
+
+
+
           </DialogActions>
         </Dialog>
 
