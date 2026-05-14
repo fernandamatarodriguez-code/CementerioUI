@@ -83,7 +83,7 @@ export default function Dashboard() {
 
       setNichesData(niches);
 
-      const mappedRows = niches.flatMap((n) => n.nichesData.map((niche) => ({
+      const mappedRows = nichesData.flatMap((n) => n.nichesData.map((niche) => ({
         id: niche.id,
         number: niche.number,
         propietario: niche.owner,
@@ -95,8 +95,8 @@ export default function Dashboard() {
 
       setRows(mappedRows);
 
-      const totalNichos = niches.length;
-      const nichosDisponibles = niches.filter(
+      const totalNichos = nichesData.length;
+      const nichosDisponibles = nichesData.filter(
         (r) =>
           r.status === 'disponible' &&
           r.nichesData.length > 0 &&
