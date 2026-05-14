@@ -1,4 +1,5 @@
 import type { NicheOccupantDto } from "./NicheOccupantDto";
+import type { PaymentResponseDto } from "./PaymentResponseDto";
 
 export interface NicheResponseDto {
   id: number;
@@ -14,6 +15,7 @@ export interface NicheResponseDto {
   is_active: boolean;
   lastPaymentYear?: string;
   occupants?: NicheOccupantDto[];
+  payments?: PaymentResponseDto[];
   createdAt?: string;
   updatedAt?: string;
 }

@@ -4,7 +4,7 @@ import AuthLayout from "./layouts/AuthLayout";
 
 import Dashboard from "./pages/Dashboard";
 import SearchNiches from "./pages/SearchNiches";
-import AddNiche from "./pages/AddNiche";
+import AllocateNiche from "./pages/AllocateNiche";
 import AvailableNiches from "./pages/AvailableNiches";
 import NicheDetails from "./pages/NicheDetails";
 import LoginPage from "./pages/Login";
@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/niches/search" element={<SearchNiches />} />
-        <Route path="/niches/add" element={<AddNiche />} />
+        <Route path="/niches/allocate" element={<AllocateNiche />} />
         <Route path="/niches/available" element={<AvailableNiches />} />
         <Route path="/niches/:id" element={<NicheDetails />} />
       </Route>

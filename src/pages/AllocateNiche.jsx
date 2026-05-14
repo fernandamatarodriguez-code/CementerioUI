@@ -1,4 +1,4 @@
-// src/pages/AddNiche.jsx
+// src/pages/AllocateNiche.jsx
 import * as React from "react";
 import {
   Box,
@@ -26,18 +26,21 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
-import { useNavigate } from "react-router-dom";
-import { addNiche } from "../Services/Niches";
+import { useNavigate, useLocation } from "react-router-dom";
+import { allocateNiche } from "../Services/Niches";
 import { insertOccupant } from "../Services/NicheOccupantsService";
 import { insertPayment, createPaymentFromFile } from "../Services/Payments";
 
-export default function AddNiche() {
+export default function AllocateNiche() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const nicheFromState = location.state?.niche;
+  
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
   const [form, setForm] = React.useState({
-    numero: "",
+    numero: nicheFromState?.number || "",
     anualidad: "",
     cedula: "",
     propietario: "",
@@ -115,7 +118,7 @@ export default function AddNiche() {
         is_active: true,
       };
 
-      const createdNiche = await addNiche(nicheData);
+      const createdNiche = await allocateNiche(nicheData);
 
       // 2. Agregar difuntos al nicho
       for (const difunto of difuntos) {
@@ -156,7 +159,7 @@ export default function AddNiche() {
           {/* HEADER */}
           <Stack direction="row" justifyContent="space-between" mb={4}>
             <Typography variant="h4" fontWeight={600}>
-              Agregar Nicho
+              Asignar Nicho
             </Typography>
 
             <Button
@@ -177,7 +180,12 @@ export default function AddNiche() {
 
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <TextField label="Número de Nicho" fullWidth value={form.numero} onChange={onChange("numero")} />
+                <TextField label="Número de Nicho" fullWidth value={form.numero} onChange={onChange("numero")}
+                InputProps={{
+                      readOnly: true,
+                      }}
+                  />
+                
               </Grid>
 
               <Grid item xs={12} md={6}>

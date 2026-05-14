@@ -9,7 +9,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
-import { getAvailableNiches, updateNiche } from '../Services/Niches';
+import { getAvailableNiches } from '../Services/Niches';
 
 // ---------- DIALOGO: Detalles ----------
 function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
@@ -29,7 +29,7 @@ function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
             {data.type}
           </Typography>
           <Typography><strong>Estado:</strong> {data.status}</Typography>
-          <Typography><strong>Dirección:</strong> {data.address}</Typography>
+          <Typography><strong>Ubicación:</strong> {data.address}</Typography>
           <Typography><strong>Descripción:</strong> {data.description}</Typography>
           <Typography align="center" sx={{ mt:8}}>
             ¿Desea reservar este nicho?
@@ -38,32 +38,9 @@ function NicheDetailsDialog({ open, onClose, data, onConfirm }) {
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button variant="outlined" onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" color="secondary" onClick={() => onConfirm?.(data)}>
+        <Button variant="contained" color="success" 
+        onClick={() => onConfirm(data)}>
           Confirmar
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-// ---------- DIALOGO: Reserva exitosa ----------
-function ReserveResultDialog({ open, onClose, nicheId, onConfirm }) {
-  return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ textAlign: 'center', fontWeight: 700 }}>
-        Nicho Reservado
-      </DialogTitle>
-      <DialogContent sx={{ pt: 1 }}>
-        <Typography align="center" sx={{ color: 'text.secondary' }}>
-          El nicho <strong>{nicheId}</strong> ha sido reservado exitosamente. Proceda con
-          el proceso de venta.
-        </Typography>
-      </DialogContent>
-      <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
-        <Button variant="outlined" onClick={onClose}>Cancelar</Button>
-        <Button variant="contained" color="secondary" onClick={onConfirm}>
-          Confirmar
-          
         </Button>
       </DialogActions>
     </Dialog>
@@ -84,9 +61,6 @@ export default function AvailableNiches() {
   // diálogos
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const [selected, setSelected] = React.useState(null);
-
-  const [reserveOpen, setReserveOpen] = React.useState(false);
-  const [reservedId, setReservedId] = React.useState('');
 
   // Cargar nichos disponibles
   React.useEffect(() => {
@@ -114,31 +88,10 @@ export default function AvailableNiches() {
   const onVer = (row) => { setSelected(row); setDetailsOpen(true); };
   const onCloseDetails = () => setDetailsOpen(false);
 
-  // Confirmar desde el diálogo de detalles -> reservar nicho
-  const onConfirmDetails = async (row) => {
-    try {
-      await updateNiche(row.id, { status: 'reservado' });
-      setDetailsOpen(false);
-      setReservedId(row.number);
-      setReserveOpen(true);
-      // Actualizar lista de disponibles
-      setAvailable(prev => prev.filter(n => n.id !== row.id));
-    } catch (error) {
-      console.error('Error al reservar nicho:', error);
-    }
-  };
-
-  // Click en botón "Reservar" de la tabla
-  const onReservar = async (row) => {
-    try {
-      await updateNiche(row.id, { status: 'reservado' });
-      setReservedId(row.number);
-      setReserveOpen(true);
-      // Actualizar lista de disponibles
-      setAvailable(prev => prev.filter(n => n.id !== row.id));
-    } catch (error) {
-      console.error('Error al reservar nicho:', error);
-    }
+  // Confirmar desde el diálogo de detalles -> ir a asignar nicho
+  const onConfirmDetails = (row) => {
+    setDetailsOpen(false);
+    navigate('/niches/allocate', { state: { niche: row } });
   };
 
   return (
@@ -161,7 +114,7 @@ export default function AvailableNiches() {
               <TextField select fullWidth label="Tipo de Nicho" value={tipo} onChange={(e) => setTipo(e.target.value)}>
                 <MenuItem value="">Todos</MenuItem>
                 <MenuItem value="Individual">Individual</MenuItem>
-                <MenuItem value="Familiar">Familiar</MenuItem>
+                <MenuItem value="Familiar">Doble</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12} md={2}>
@@ -191,60 +144,89 @@ export default function AvailableNiches() {
             <Stack alignItems="center" sx={{ py: 4 }}>
               <CircularProgress />
             </Stack>
-          ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Número</TableCell>
-                <TableCell>Tipo</TableCell>
-                <TableCell>Propietario</TableCell>
-                <TableCell>Dirección</TableCell>
-                <TableCell>Acciones</TableCell>
-              </TableRow>
-              
-            </TableHead>
-            <TableBody>
+          ) : view === 'grid' ? (
+            // Vista Grid
+            <Grid container spacing={2} sx={{ mt: 2 }}>
               {filtered.map((n) => (
-                <TableRow key={n.id} hover>
-                  <TableCell>{n.number}</TableCell>
-                  <TableCell>
-                    <Chip icon={<PersonIcon />} label={n.type || 'Individual'} variant="outlined" />
-                  </TableCell>
-                  <TableCell>{n.owner || 'N/A'}</TableCell>
-                  <TableCell>{n.address || 'N/A'}</TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1.5}>
-                      <Button variant="contained" startIcon={<VisibilityIcon />} onClick={() => onVer(n)}>
-                        Ver
-                      </Button>
-                      <Button variant="outlined" onClick={() => onReservar(n)}>
-                        Reservar
-                      </Button>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
+                <Grid item xs={12} sm={6} md={4} lg={3} key={n.id}>
+                  <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                        Nicho #{n.number}
+                      </Typography>
+                      <Chip 
+                        icon={<PersonIcon />} 
+                        label={n.type || 'Individual'} 
+                        variant="outlined" 
+                        size="small"
+                        sx={{ mb: 1.5 }}
+                      />
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Propietario:</strong> {n.owner || 'N/A'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Ubicación:</strong> {n.address || 'N/A'}
+                      </Typography>
+                    </CardContent>
+                    <Box sx={{ p: 2, pt: 0 }}>
+                      <Stack direction="row" spacing={1}>
+                        <Button 
+                          variant="contained" 
+                          size="small" 
+                          startIcon={<VisibilityIcon />} 
+                          onClick={() => onVer(n)}
+                          fullWidth
+                        >
+                          Ver
+                        </Button>
+                      </Stack>
+                    </Box>
+                  </Card>
+                </Grid>
               ))}
-            </TableBody>
-          </Table>
+            </Grid>
+          ) : (
+            // Vista Lista (Tabla)
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Número</TableCell>
+                  <TableCell>Tipo</TableCell>
+                  <TableCell>Propietario</TableCell>
+                  <TableCell>Ubicación</TableCell>
+                  <TableCell>Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filtered.map((n) => (
+                  <TableRow key={n.id} hover>
+                    <TableCell>{n.number}</TableCell>
+                    <TableCell>
+                      <Chip icon={<PersonIcon />} label={n.type || 'Individual'} variant="outlined" />
+                    </TableCell>
+                    <TableCell>{n.owner || 'N/A'}</TableCell>
+                    <TableCell>{n.address || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1.5}>
+                        <Button variant="contained" startIcon={<VisibilityIcon />} onClick={() => onVer(n)}>
+                          Ver
+                        </Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
 
-      {/* Diálogos */}
+      {/* Diálogo */}
       <NicheDetailsDialog
         open={detailsOpen}
         onClose={onCloseDetails}
         data={selected}
         onConfirm={onConfirmDetails}
-      />
-
-      <ReserveResultDialog
-        open={reserveOpen}
-        nicheId={reservedId}
-        onClose={() => setReserveOpen(false)}
-        onConfirm={() => {
-          setReserveOpen(false);
-        }}
       />
     </Box>
   );

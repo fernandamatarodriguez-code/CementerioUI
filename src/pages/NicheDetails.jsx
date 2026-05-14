@@ -31,7 +31,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { getNicheById, updateNiche, deleteNiche } from "../Services/Niches";
 import { insertOccupant } from "../Services/NicheOccupantsService";
-import { getPaymentsByNicheId, insertPayment, createPaymentFromFile } from "../Services/Payments";
+import { insertPayment, createPaymentFromFile, getPaymentById, getPaymentDocument } from "../Services/Payments";
 
 export default function NicheDetails() {
   const { id } = useParams();
@@ -75,6 +75,7 @@ export default function NicheDetails() {
   const [annualidades, setAnnualidades] = React.useState([]);
   const [selectedFile, setSelectedFile] = React.useState(null);
   const [openViewer, setOpenViewer] = React.useState(false);
+  const [loadingDocument, setLoadingDocument] = React.useState(false);
 
   /* ================= LOAD DATA ================= */
 
@@ -108,19 +109,29 @@ export default function NicheDetails() {
           })));
         }
 
-        // Cargar pagos
-        const payments = await getPaymentsByNicheId(Number(id));
-        if (payments && payments.length > 0) {
-          setAnnualidades(payments.map(p => ({
-            id: p.id,
-            paidAt: new Date(p.paidAt).getFullYear(),
-            lastPayment: new Date(p.paidAt),
-            name: p.documentName,
-            url: p.documentBase64 ? `data:${p.documentMimeType};base64,${p.documentBase64}` : "",
-            type: p.documentMimeType,
-            date: new Date(p.paidAt).toLocaleDateString(),
-            documentType: p.documentType === "anualidad" ? "Anualidad" : "Compra",
-          })));
+        // Cargar pagos (ya vienen en nicheData.payments)
+        if (nicheData.payments && nicheData.payments.length > 0) {
+          setAnnualidades(nicheData.payments.map(p => {
+            // El documento viene como Buffer, convertir a base64
+            let docUrl = "";
+            if (p.document?.data && Array.isArray(p.document.data)) {
+              const bytes = new Uint8Array(p.document.data);
+              let binary = '';
+              bytes.forEach(b => binary += String.fromCharCode(b));
+              const base64 = btoa(binary);
+              docUrl = `data:${p.documentMimeType || 'application/pdf'};base64,${base64}`;
+            }
+            
+            return {
+              id: p.id,
+              year: p.paidAt ? new Date(p.paidAt).getFullYear() : new Date().getFullYear(),
+              name: p.documentName,
+              url: docUrl,
+              type: p.documentMimeType || 'application/pdf',
+              date: p.paidAt ? new Date(p.paidAt).toLocaleDateString() : "",
+              tipoBoleta: p.documentType === "compra" ? "Compra" : "Anualidad",
+            };
+          }));
         }
       } catch (err) {
         setError("Error al cargar los datos del nicho");
@@ -187,6 +198,82 @@ export default function NicheDetails() {
       setOpenSnackbar(true);
     } catch (err) {
       setFileError("Error al cargar el archivo");
+    }
+  };
+
+  // Función para ver el documento de una boleta
+  const handleViewDocument = async (annuity) => {
+    // Si ya tiene URL local (archivo recién subido), usar directamente
+    if (annuity.url && !annuity.url.startsWith('data:') && annuity.url.startsWith('blob:')) {
+      setSelectedFile(annuity);
+      setOpenViewer(true);
+      return;
+    }
+
+    // Si ya tiene el base64 cargado, usar directamente
+    if (annuity.url && annuity.url.startsWith('data:')) {
+      setSelectedFile(annuity);
+      setOpenViewer(true);
+      return;
+    }
+
+    // Cargar el documento desde la API
+    try {
+      setLoadingDocument(true);
+      setError(""); // Limpiar error anterior
+      
+      let documentUrl = null;
+      let documentType = annuity.type;
+
+      // Primer intento: obtener pago con documento incluido
+      try {
+        const payment = await getPaymentById(annuity.id, true);
+        console.log("Respuesta del pago:", payment);
+        
+        if (payment.documentBase64) {
+          documentUrl = `data:${payment.documentMimeType || 'application/octet-stream'};base64,${payment.documentBase64}`;
+          documentType = payment.documentMimeType || annuity.type;
+        } else if (payment.documentUrl) {
+          documentUrl = payment.documentUrl;
+          documentType = payment.documentMimeType || annuity.type;
+        }
+      } catch (paymentError) {
+        console.log("Error obteniendo pago, intentando endpoint de documento:", paymentError);
+      }
+
+      // Segundo intento: endpoint directo de documento
+      if (!documentUrl) {
+        try {
+          const blob = await getPaymentDocument(annuity.id);
+          documentUrl = URL.createObjectURL(blob);
+          documentType = blob.type || annuity.type;
+        } catch (docError) {
+          console.log("Error obteniendo documento directo:", docError);
+        }
+      }
+
+      if (documentUrl) {
+        const updatedAnnuity = {
+          ...annuity,
+          url: documentUrl,
+          type: documentType,
+        };
+        
+        setAnnualidades(prev => prev.map(a => 
+          a.id === annuity.id ? updatedAnnuity : a
+        ));
+        
+        setSelectedFile(updatedAnnuity);
+        setOpenViewer(true);
+      } else {
+        setError("El documento no está disponible. Verifique que el backend tenga el endpoint correcto.");
+      }
+    } catch (err) {
+      console.error("Error al cargar el documento:", err);
+      const errorMessage = err?.response?.data?.message || err?.message || "Error desconocido";
+      setError(`Error al cargar el documento: ${errorMessage}`);
+    } finally {
+      setLoadingDocument(false);
     }
   };
 
@@ -275,6 +362,9 @@ export default function NicheDetails() {
                     value={form.number} 
                     onChange={handleFormChange("number")}
                     fullWidth 
+                     InputProps={{
+                      readOnly: true,
+                      }}
                   />
                 </Grid>
 
@@ -436,13 +526,10 @@ export default function NicheDetails() {
                           <Button
                             size="small"
                             variant="outlined"
-                            disabled={!a.url}
-                            onClick={() => {
-                              setSelectedFile(a);
-                              setOpenViewer(true);
-                            }}
+                            disabled={loadingDocument}
+                            onClick={() => handleViewDocument(a)}
                           >
-                            Ver
+                            {loadingDocument ? <CircularProgress size={16} /> : "Ver"}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -514,23 +601,28 @@ export default function NicheDetails() {
         <Dialog open={openViewer} onClose={() => setOpenViewer(false)} maxWidth="md" fullWidth>
           <DialogTitle>Visualizar Boleta - {selectedFile?.tipoBoleta}</DialogTitle>
           <DialogContent>
-            {selectedFile?.type === "application/pdf"
-              ? <iframe src={selectedFile?.url} width="100%" height="500px" title="PDF" />
-              : <img src={selectedFile?.url} alt="Boleta" style={{ width: "100%" }} />}
+            {selectedFile?.url ? (
+              selectedFile?.type?.includes("pdf") || selectedFile?.type === "application/pdf"
+                ? <iframe src={selectedFile?.url} width="100%" height="500px" title="PDF" style={{ border: 'none' }} />
+                : <img src={selectedFile?.url} alt="Boleta" style={{ width: "100%", maxHeight: "500px", objectFit: "contain" }} />
+            ) : (
+              <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
+                No hay documento disponible para visualizar
+              </Typography>
+            )}
           </DialogContent>
+          <DialogActions>
+            <Button variant="outlined" onClick={() => setOpenViewer(false)} sx={{ borderWidth: 2 }}>Cerrar</Button>
+  
+
+
+
+          </DialogActions>
         </Dialog>
 
         <Snackbar open={openSnackbar} autoHideDuration={3000} onClose={() => setOpenSnackbar(false)}>
           <Alert severity="success">Boleta cargada correctamente</Alert>
         </Snackbar>
-
-        <ConfirmDialog
-          open={openDelete}
-          title="Eliminar Nicho"
-          message="¿Está seguro de eliminar este nicho?"
-          onCancel={() => setOpenDelete(false)}
-          onConfirm={() => navigate("/")}
-        />
       </Card>
     </Box>
   );

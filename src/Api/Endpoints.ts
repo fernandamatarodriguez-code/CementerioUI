@@ -11,6 +11,7 @@ const endpoints = {
    },
   niche: {
     addNiche: '/api/niches',
+    allocateNiche: '/api/niches',
     getNiches: '/api/niches',
     getNicheById: '/api/niches',  
     updateNiche: '/api/niches'
@@ -18,7 +19,7 @@ const endpoints = {
   payments: {
     addPayment: '/api/payments',
     getPayments: '/api/payments', 
-    updatePayment: '/api/payments'
+    updatePayment: '/api/payments/{id}'
   },
   users: {
     updateUser: '/api/users', 
