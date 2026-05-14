@@ -36,7 +36,7 @@ import { insertPayment, createPaymentFromFile, getPaymentById } from "../Service
 export default function NicheDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -44,14 +44,16 @@ export default function NicheDetails() {
 
   /* ================= FORM STATE ================= */
   const [form, setForm] = React.useState({
+    id: null,
+    nicheMainId: null,
     number: "",
-    lastPaymentYear: "",
-    identification: "",
+    lastPayment: "",
+    ownerId: "",
     owner: "",
     phone: "",
     address: "",
     email: "",
-    notes: "",
+    description: "",
   });
 
   /* ================= DIFUNTOS ================= */
@@ -85,17 +87,19 @@ export default function NicheDetails() {
         setLoading(true);
         const nicheData = await getNicheById(Number(id));
         setNiche(nicheData);
-        
+
         // Actualizar formulario con datos del nicho
         setForm({
+          id: nicheData.id,
+          nicheMainId: nicheData.nicheMainId,
           number: nicheData.number || "",
-          lastPaymentYear: nicheData.lastPaymentYear || new Date().getFullYear().toString(),
+          lastPayment: nicheData.lastPayment || new Date().getFullYear().toString(),
           identification: nicheData.identification || "",
           owner: nicheData.owner || "",
           phone: nicheData.phone || "",
           address: nicheData.address || "",
           email: nicheData.email || "",
-          notes: nicheData.description || "",
+          description: nicheData.description || "",
         });
 
         // Cargar ocupantes
@@ -121,15 +125,16 @@ export default function NicheDetails() {
               const base64 = btoa(binary);
               docUrl = `data:${p.documentMimeType || 'application/pdf'};base64,${base64}`;
             }
-            
+
             return {
               id: p.id,
               year: p.paidAt ? new Date(p.paidAt).getFullYear() : new Date().getFullYear(),
               name: p.documentName,
               url: docUrl,
               type: p.documentMimeType || 'application/pdf',
-              date: p.paidAt ? new Date(p.paidAt).toLocaleDateString() : "",
+              paidAt: p.paidAt ? new Date(p.paidAt).toLocaleDateString() : "",
               tipoBoleta: p.documentType === "compra" ? "Compra" : "Anualidad",
+
             };
           }));
         }
@@ -162,7 +167,7 @@ export default function NicheDetails() {
         fechaNacimiento: difunto.fechaNacimiento,
         fechaDefuncion: difunto.fechaDefuncion,
       });
-      
+
       setDifuntos((prev) => [...prev, difunto]);
       setDifunto({
         name: "",
@@ -182,7 +187,7 @@ export default function NicheDetails() {
 
     try {
       // Crear y guardar el pago
-      const paymentData = await createPaymentFromFile(file, Number(id), 'anualidad');
+      const paymentData = await createPaymentFromFile(file, Number(id));
       await insertPayment(paymentData);
 
       const newEntry = {
@@ -190,8 +195,8 @@ export default function NicheDetails() {
         name: file.name,
         url: URL.createObjectURL(file),
         type: file.type,
-        date: new Date().toLocaleDateString(),
-        documentType: "Anualidad",
+        paidAt: new Date().toLocaleDateString(),
+        tipoBoleta: "Anualidad",
       };
 
       setAnnualidades((prev) => [newEntry, ...prev]);
@@ -221,7 +226,7 @@ export default function NicheDetails() {
     try {
       setLoadingDocument(true);
       setError(""); // Limpiar error anterior
-      
+
       let documentUrl = null;
       let documentType = annuity.type;
 
@@ -229,7 +234,7 @@ export default function NicheDetails() {
       try {
         const payment = await getPaymentById(annuity.id, true);
         console.log("Respuesta del pago:", payment);
-        
+
         if (payment.documentBase64) {
           documentUrl = `data:${payment.documentMimeType || 'application/octet-stream'};base64,${payment.documentBase64}`;
           documentType = payment.documentMimeType || annuity.type;
@@ -240,7 +245,22 @@ export default function NicheDetails() {
       } catch (paymentError) {
         console.log("Error obteniendo pago, intentando endpoint de documento:", paymentError);
       }
+      if (documentUrl) {
+        const updatedAnnuity = {
+          ...annuity,
+          url: documentUrl,
+          type: documentType,
+        };
 
+        setAnnualidades(prev => prev.map(a =>
+          a.id === annuity.id ? updatedAnnuity : a
+        ));
+
+        setSelectedFile(updatedAnnuity);
+        setOpenViewer(true);
+      } else {
+        setError("El documento no está disponible. Verifique que el backend tenga el endpoint correcto.");
+      }
     } catch (err) {
       console.error("Error al cargar el documento:", err);
       const errorMessage = err?.response?.data?.message || err?.message || "Error desconocido";
@@ -254,13 +274,15 @@ export default function NicheDetails() {
     try {
       setSaving(true);
       await updateNiche(Number(id), {
+        id: form.id,
+        nicheMainId: form.nicheMainId,
         number: form.number,
         owner: form.owner,
         identification: form.identification,
         phone: form.phone,
         address: form.address,
         email: form.email,
-        description: form.notes,
+        description: form.description,
         type: niche?.type || "Individual",
         status: niche?.status || "ocupado",
         is_active: true,
@@ -330,79 +352,79 @@ export default function NicheDetails() {
 
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <TextField 
-                    label="Número de Nicho" 
-                    value={form.number} 
+                  <TextField
+                    label="Número de Nicho"
+                    value={form.number}
                     onChange={handleFormChange("number")}
-                    fullWidth 
-                     InputProps={{
+                    fullWidth
+                    InputProps={{
                       readOnly: true,
-                      }}
+                    }}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
                   <TextField
                     label="Año Última Anualidad"
-                    value={form.lastPaymentYear}
-                    onChange={handleFormChange("lastPaymentYear")}
+                    value={form.lastPayment}
+                    onChange={handleFormChange("lastPayment")}
                     fullWidth
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField 
-                    label="Cédula Propietario" 
-                    value={form.identification} 
+                  <TextField
+                    label="Cédula Propietario"
+                    value={form.identification}
                     onChange={handleFormChange("identification")}
-                    fullWidth 
+                    fullWidth
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField 
-                    label="Nombre Propietario" 
-                    value={form.owner} 
+                  <TextField
+                    label="Nombre Propietario"
+                    value={form.owner}
                     onChange={handleFormChange("owner")}
-                    fullWidth 
+                    fullWidth
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField 
-                    label="Teléfono" 
-                    value={form.phone} 
+                  <TextField
+                    label="Teléfono"
+                    value={form.phone}
                     onChange={handleFormChange("phone")}
-                    fullWidth 
+                    fullWidth
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField 
-                    label="Dirección" 
-                    value={form.address} 
+                  <TextField
+                    label="Dirección"
+                    value={form.address}
                     onChange={handleFormChange("address")}
-                    fullWidth 
+                    fullWidth
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField 
-                    label="Correo" 
-                    value={form.email} 
+                  <TextField
+                    label="Correo"
+                    value={form.email}
                     onChange={handleFormChange("email")}
-                    fullWidth 
+                    fullWidth
                   />
                 </Grid>
 
                 <Grid item xs={12}>
-                  <TextField 
-                    label="Descripción" 
-                    value={form.notes} 
-                    onChange={handleFormChange("notes")}
-                    multiline 
-                    minRows={3} 
-                    fullWidth 
+                  <TextField
+                    label="Descripción"
+                    value={form.description}
+                    onChange={handleFormChange("description")}
+                    multiline
+                    minRows={3}
+                    fullWidth
                   />
                 </Grid>
               </Grid>
@@ -441,8 +463,8 @@ export default function NicheDetails() {
                         <TableRow key={i}>
                           <TableCell>{d.name}</TableCell>
                           <TableCell>{d.lastName}</TableCell>
-                          <TableCell>{d.fechaNacimiento ? new Date(d.fechaNacimiento).toLocaleDateString() : ""}</TableCell>
-                          <TableCell>{d.fechaDefuncion ? new Date(d.fechaDefuncion).toLocaleDateString() : ""}</TableCell>
+                          <TableCell>{new Date(d.fechaNacimiento).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(d.fechaDefuncion).toLocaleDateString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -482,19 +504,19 @@ export default function NicheDetails() {
                   <TableBody>
                     {annualidades.map((a, i) => (
                       <TableRow key={i} hover>
-                        <TableCell>{a.paidAt}</TableCell>
+                        <TableCell>{a.year}</TableCell>
                         <TableCell>
                           <Typography
                             sx={{
-                              color: a.documentType === "Compra" ? "secondary.main" : "primary.main",
+                              color: a.documentType === "compra" ? "secondary.main" : "primary.main",
                               fontWeight: 500,
                             }}
                           >
-                            {a.documentType}
+                            {a.documentType === "compra" ? "Compra" : "Anualidad"}
                           </Typography>
                         </TableCell>
                         <TableCell>{a.name}</TableCell>
-                        <TableCell>{a.lastPayment.toLocaleDateString()}</TableCell>
+                        <TableCell>{a.paidAt}</TableCell>
                         <TableCell>
                           <Button
                             size="small"
@@ -530,9 +552,9 @@ export default function NicheDetails() {
                   Cancelar
                 </Button>
 
-                <Button 
-                  color="success" 
-                  variant="contained" 
+                <Button
+                  color="success"
+                  variant="contained"
                   onClick={handleUpdate}
                   disabled={saving}
                 >
@@ -586,10 +608,6 @@ export default function NicheDetails() {
           </DialogContent>
           <DialogActions>
             <Button variant="outlined" onClick={() => setOpenViewer(false)} sx={{ borderWidth: 2 }}>Cerrar</Button>
-  
-
-
-
           </DialogActions>
         </Dialog>
 

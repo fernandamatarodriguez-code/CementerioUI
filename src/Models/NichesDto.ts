@@ -1,4 +1,6 @@
 export interface NichesDto {
+  id?:number;  
+  nicheMainId: number;
   number: string;
   owner: string;
   type: string;
