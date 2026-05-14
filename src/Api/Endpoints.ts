@@ -26,6 +26,12 @@ const endpoints = {
   users: {
     updateUser: '/api/users', 
     userInfo: '/api/usuario/login'
+  },
+  nichesMain: {
+    addNiche: '/api/nichesMain',
+    getNiches: '/api/nichesMain',
+    getNicheById: '/api/nichesMain',  
+    updateNiche: '/api/nichesMain',
   }
 };
 
