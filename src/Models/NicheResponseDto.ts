@@ -26,3 +26,13 @@ export interface NicheListResponseDto {
   page: number;
   pageSize: number;
 }
+
+export interface NichesMainResponseDto {
+  id: number;
+  number: string;
+  type: string;
+  address: string;
+  description: string;
+  status: string; 
+  niches?: NicheResponseDto[];
+}

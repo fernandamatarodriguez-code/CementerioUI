@@ -35,7 +35,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 
-import { getNiche, addNiche } from '../Services/Niches';
+import { getNiches, addNiche } from '../Services/Niches';
 
 const INITIAL_NICHE_STATE = {
   number: '',
@@ -58,6 +58,7 @@ export default function Dashboard() {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDifuntos, setSelectedDifuntos] = useState([]);
   const [rows, setRows] = useState([]);
+  const [nichesData, setNichesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [newNiche, setNewNiche] = useState(INITIAL_NICHE_STATE);
@@ -68,9 +69,20 @@ export default function Dashboard() {
   const fetchNiches = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getNiche();
+      const response = await getNiches();
 
-      const mappedRows = response.map((niche) => ({
+      const niches = response.map((n) => ({
+        id: n.id,
+        number: n.number,
+        address: n.address,
+        description: n.description,
+        type: n.type,
+        nichesData: n.niches || [],
+      }));
+
+      setNichesData(niches);
+
+      const mappedRows = niches.flatMap((n) => n.nichesData.map((niche) => ({
         id: niche.id,
         number: niche.number,
         propietario: niche.owner,
@@ -78,7 +90,7 @@ export default function Dashboard() {
         difuntos: niche.occupants || [],
         status: niche.status,
         isActive: niche.is_active,
-      }));
+      })));
 
       setRows(mappedRows);
 

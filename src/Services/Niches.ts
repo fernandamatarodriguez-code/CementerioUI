@@ -1,7 +1,7 @@
 import ApiService from "../Api/ApiService";
 import endpoints from "../Api/Endpoints";
 import type { NichesDto } from "../Models/NichesDto";
-import type { NicheResponseDto, NicheListResponseDto } from "../Models/NicheResponseDto";
+import type { NicheResponseDto, NicheListResponseDto, NichesMainResponseDto } from "../Models/NicheResponseDto";
 import type { NichesMainDto } from "../Models/NichesMainDto";
 
 // ============== NICHES ==============
@@ -29,8 +29,8 @@ export const allocateNiche = async (niche: NichesDto): Promise<NicheResponseDto>
  * @param params - Parámetros opcionales de filtrado
  * @returns Lista de nichos
  */
-export const getNiche = async (params?: Record<string, any>): Promise<NicheResponseDto[]> => {
-  return await ApiService.get<NicheResponseDto[]>(endpoints.niche.getNiches, params);
+export const getNiches = async (params?: Record<string, any>): Promise<NichesMainResponseDto[]> => {
+  return await ApiService.get<NichesMainResponseDto[]>(endpoints.nichesMain.getNiches, params);
 };
 
 /**
