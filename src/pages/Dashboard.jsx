@@ -66,24 +66,23 @@ export default function Dashboard() {
 
   // ================= CARGAR DATOS =================
 
-  const fetchNiches = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await getNiches();
+ const fetchNiches = useCallback(async () => {
+  try {
+    setLoading(true);
+    const response = await getNiches();
 
-      const niches = response.map((n) => ({
-        id: n.id,
-        number: n.number,
-        address: n.address,
-        description: n.description,
-        type: n.type,
-        status: n.status,
-        nichesData: n.niches || [],
-      }));
+    const niches = response.map((n) => ({
+      id: n.id,
+      number: n.number,
+      address: n.address,
+      description: n.description,
+      type: n.type,
+      status: n.status,
+      nichesData: n.niches || [],
+    }));
 
-      setNichesData(niches);
-
-      const mappedRows = nichesData.flatMap((n) => n.nichesData.map((niche) => ({
+    const mappedRows = niches.flatMap((n) =>
+      n.nichesData.map((niche) => ({
         id: niche.id,
         number: niche.number,
         propietario: niche.owner,
@@ -91,38 +90,40 @@ export default function Dashboard() {
         difuntos: niche.occupants || [],
         status: niche.status,
         isActive: niche.is_active,
-      })));
+      }))
+    );
 
-      setRows(mappedRows);
+    const totalNichos = niches.length;
+    const nichosDisponibles = niches.filter(
+      (r) =>
+        r.status === 'disponible' &&
+        r.nichesData.length > 0 &&
+        r.nichesData.every((n) => !n.isActive)
+    ).length;
+    const proximosVencer = mappedRows.filter((r) => {
+      const diff = currentYear - Number(r.ultima);
+      return diff === 1;
+    }).length;
+    const vencidos = mappedRows.filter((r) => {
+      const diff = currentYear - Number(r.ultima);
+      return diff > 1;
+    }).length;
 
-      const totalNichos = nichesData.length;
-      const nichosDisponibles = nichesData.filter(
-        (r) =>
-          r.status === 'disponible' &&
-          r.nichesData.length > 0 &&
-          r.nichesData.every((n) => !n.isActive)
-      ).length;
-      const proximosVencer = mappedRows.filter((r) => {
-        const diff = currentYear - Number(r.ultima);
-        return diff === 1;
-      }).length;
-      const vencidos = mappedRows.filter((r) => {
-        const diff = currentYear - Number(r.ultima);
-        return diff > 1;
-      }).length;
-
-      setStats([
-        { label: 'Total Nichos', value: totalNichos },
-        { label: 'Nichos Disponibles', value: nichosDisponibles },
-        { label: 'Próximos a Vencer', value: proximosVencer },
-        { label: 'Vencidos', value: vencidos },
-      ]);
-    } catch (error) {
-      console.error('Error al obtener nichos:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentYear]);
+    // Set all state at once at the end
+    setNichesData(niches);
+    setRows(mappedRows);
+    setStats([
+      { label: 'Total Nichos', value: totalNichos },
+      { label: 'Nichos Disponibles', value: nichosDisponibles },
+      { label: 'Próximos a Vencer', value: proximosVencer },
+      { label: 'Vencidos', value: vencidos },
+    ]);
+  } catch (error) {
+    console.error('Error al obtener nichos:', error);
+  } finally {
+    setLoading(false);
+  }
+}, [currentYear]);
 
   useEffect(() => {
     fetchNiches();
