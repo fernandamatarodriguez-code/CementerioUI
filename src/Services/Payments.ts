@@ -49,17 +49,6 @@ export const getPaymentById = async (id: number, includeDocument: boolean = true
 };
 
 /**
- * Obtiene el documento de un pago directamente
- * @param id - ID del pago
- * @returns Blob del documento
- */
-export const getPaymentDocument = async (id: number): Promise<Blob> => {
-  const url = endpoints.payments.getDocument.replace('{id}', id.toString());
-  const response = await axiosInstance.get(url, { responseType: 'blob' });
-  return response.data;
-};
-
-/**
  * Actualiza un pago existente
  * @param id - ID del pago
  * @param payment - Datos a actualizar
@@ -74,7 +63,7 @@ export const updatePayment = async (id: number, payment: Partial<PaymentDto>): P
  * @param id - ID del pago a eliminar
  */
 export const deletePayment = async (id: number): Promise<void> => {
-  return await ApiService.delete<void>(`${endpoints.payments.getPayments}/${id}`);
+  return await ApiService.delete<void>(endpoints.payments.getPayments, id);
 };
 
 /**

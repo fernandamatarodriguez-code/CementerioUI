@@ -21,8 +21,8 @@ class ApiService {
     return response.data;
   }
 
-  static async delete<T>(url: string): Promise<T> {
-    const response = await axiosInstance.delete<T>(url);
+  static async delete<T>(url: string, id: number): Promise<T> {
+    const response = await axiosInstance.delete<T>(`${url}/${id}`);
     return response.data;
   }
 

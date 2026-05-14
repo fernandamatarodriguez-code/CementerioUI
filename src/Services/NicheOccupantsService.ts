@@ -56,5 +56,5 @@ export const updateOccupant = async (id: number, occupant: UpdateNicheOccupantDt
  * @param id - ID del ocupante a eliminar
  */
 export const deleteOccupant = async (id: number): Promise<void> => {
-  return await ApiService.delete<void>(`${endpoints.nicheOccupants.getOccupant}/${id}`);
+  return await ApiService.delete<void>(endpoints.nicheOccupants.deleteOccupant, id);
 };

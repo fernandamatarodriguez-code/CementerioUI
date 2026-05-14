@@ -7,14 +7,16 @@ const endpoints = {
   nicheOccupants: {
     insertOccupant: '/api/nicheoccupants',
     getOccupant: '/api/nicheoccupants',
-    updateOccupant: '/api/nicheoccupants'
+    updateOccupant: '/api/nicheoccupants',
+    deleteOccupant: '/api/nicheoccupants'
    },
   niche: {
     addNiche: '/api/niches',
     allocateNiche: '/api/niches',
     getNiches: '/api/niches',
     getNicheById: '/api/niches',  
-    updateNiche: '/api/niches'
+    updateNiche: '/api/niches',
+    deleteNiche: '/api/niches'
   },
   payments: {
     addPayment: '/api/payments',

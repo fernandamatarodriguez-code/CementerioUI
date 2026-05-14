@@ -93,7 +93,7 @@ export const updateNiche = async (id: number, niche: Partial<NichesDto>): Promis
  * @returns Nicho desactivado
  */
 export const deleteNiche = async (id: number): Promise<NicheResponseDto> => {
-  return await ApiService.patch<NicheResponseDto>(endpoints.niche.updateNiche, id.toString(), { is_active: false });
+  return await ApiService.delete<NicheResponseDto>(endpoints.niche.deleteNiche, id);
 };
 
 /**

@@ -31,7 +31,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { getNicheById, updateNiche, deleteNiche } from "../Services/Niches";
 import { insertOccupant } from "../Services/NicheOccupantsService";
-import { insertPayment, createPaymentFromFile, getPaymentById, getPaymentDocument } from "../Services/Payments";
+import { insertPayment, createPaymentFromFile, getPaymentById } from "../Services/Payments";
 
 export default function NicheDetails() {
   const { id } = useParams();
@@ -241,33 +241,6 @@ export default function NicheDetails() {
         console.log("Error obteniendo pago, intentando endpoint de documento:", paymentError);
       }
 
-      // Segundo intento: endpoint directo de documento
-      if (!documentUrl) {
-        try {
-          const blob = await getPaymentDocument(annuity.id);
-          documentUrl = URL.createObjectURL(blob);
-          documentType = blob.type || annuity.type;
-        } catch (docError) {
-          console.log("Error obteniendo documento directo:", docError);
-        }
-      }
-
-      if (documentUrl) {
-        const updatedAnnuity = {
-          ...annuity,
-          url: documentUrl,
-          type: documentType,
-        };
-        
-        setAnnualidades(prev => prev.map(a => 
-          a.id === annuity.id ? updatedAnnuity : a
-        ));
-        
-        setSelectedFile(updatedAnnuity);
-        setOpenViewer(true);
-      } else {
-        setError("El documento no está disponible. Verifique que el backend tenga el endpoint correcto.");
-      }
     } catch (err) {
       console.error("Error al cargar el documento:", err);
       const errorMessage = err?.response?.data?.message || err?.message || "Error desconocido";
