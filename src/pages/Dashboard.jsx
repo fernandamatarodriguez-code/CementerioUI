@@ -77,6 +77,7 @@ export default function Dashboard() {
         address: n.address,
         description: n.description,
         type: n.type,
+        status: n.status,
         nichesData: n.niches || [],
       }));
 
@@ -94,9 +95,12 @@ export default function Dashboard() {
 
       setRows(mappedRows);
 
-      const totalNichos = mappedRows.length;
-      const nichosDisponibles = mappedRows.filter(
-        (r) => r.status === 'disponible' || !r.isActive
+      const totalNichos = niches.length;
+      const nichosDisponibles = niches.filter(
+        (r) =>
+          r.status === 'disponible' &&
+          r.nichesData.length > 0 &&
+          r.nichesData.every((n) => !n.isActive)
       ).length;
       const proximosVencer = mappedRows.filter((r) => {
         const diff = currentYear - Number(r.ultima);
