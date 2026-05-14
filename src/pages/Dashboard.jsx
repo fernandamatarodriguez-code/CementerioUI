@@ -40,7 +40,7 @@ import { getNiche, addNiche } from '../Services/Niches';
 const INITIAL_NICHE_STATE = {
   number: '',
   type: '',
-  location: '',
+  address: '',
   description: '',
 };
 
@@ -359,8 +359,8 @@ export default function Dashboard() {
             <TextField
               label="Ubicación"
               fullWidth
-              value={newNiche.location}
-              onChange={handleChangeNewNiche('location')}
+              value={newNiche.address}
+              onChange={handleChangeNewNiche('address')}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, minHeight: 68 } }}
             />
             <TextField
