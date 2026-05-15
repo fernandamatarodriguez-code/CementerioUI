@@ -371,7 +371,7 @@ export default function Dashboard() {
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, minHeight: 68 } }}
             >
               <MenuItem value="Individual">Individual</MenuItem>
-              <MenuItem value="Double">Doble</MenuItem>
+              <MenuItem value="Doble">Doble</MenuItem>
             </TextField>
             <TextField
               label="Ubicación"

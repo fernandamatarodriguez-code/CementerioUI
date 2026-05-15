@@ -56,8 +56,8 @@ export const getNichesPaginated = async (
  * Obtiene los nichos disponibles
  * @returns Lista de nichos disponibles
  */
-export const getAvailableNiches = async (): Promise<NicheResponseDto[]> => {
-  return await ApiService.get<NicheResponseDto[]>(endpoints.niche.getNiches, { status: 'disponible' });
+export const getAvailableNiches = async (): Promise<NichesMainDto[]> => {
+  return await ApiService.get<NichesMainDto[]>(endpoints.nichesMain.getNiches, { status: 'disponible' });
 };
 
 /**
@@ -65,8 +65,8 @@ export const getAvailableNiches = async (): Promise<NicheResponseDto[]> => {
  * @param query - Término de búsqueda
  * @returns Lista de nichos que coinciden
  */
-export const searchNiches = async (query: string): Promise<NicheResponseDto[]> => {
-  return await ApiService.get<NicheResponseDto[]>(endpoints.niche.getNiches, { search: query });
+export const searchNiches = async (query: string): Promise<NichesMainDto[]> => {
+  return await ApiService.get<NichesMainDto[]>(endpoints.niche.getNiches, { search: query });
 };
 
 /**

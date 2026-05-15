@@ -25,7 +25,7 @@ export default function SearchNiches(){
     try {
       const response = await searchNiches(q);
       setResults(response);
-      setPage(1); // reset a la primera página en cada búsqueda
+      setPage(1); 
     } catch (error) {
       console.error('Error al buscar nichos:', error);
       setResults([]);
@@ -97,7 +97,7 @@ export default function SearchNiches(){
                           <strong>Propietario:</strong> {r.owner}<br/>
                           <strong>Nicho:</strong> {r.number}&nbsp;&nbsp;
                           <strong>Última Anualidad:</strong>{' '}
-                          {r.lastPaymentYear || 'N/A'}
+                          {r.lastPayment || 'N/A'}
                         </span>
                       }
                     />

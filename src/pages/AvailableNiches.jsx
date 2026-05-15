@@ -162,10 +162,10 @@ export default function AvailableNiches() {
                         sx={{ mb: 1.5 }}
                       />
                       <Typography variant="body2" color="text.secondary">
-                        <strong>Propietario:</strong> {n.owner || 'N/A'}
+                        <strong>Ubicación:</strong> {n.address || 'N/A'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        <strong>Ubicación:</strong> {n.address || 'N/A'}
+                        <strong>Descripción:</strong> {n.description}
                       </Typography>
                     </CardContent>
                     <Box sx={{ p: 2, pt: 0 }}>
@@ -191,9 +191,9 @@ export default function AvailableNiches() {
               <TableHead>
                 <TableRow>
                   <TableCell>Número</TableCell>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Propietario</TableCell>
+                  <TableCell>Tipo</TableCell>                  
                   <TableCell>Ubicación</TableCell>
+                  <TableCell>Descripción</TableCell>
                   <TableCell>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -204,8 +204,8 @@ export default function AvailableNiches() {
                     <TableCell>
                       <Chip icon={<PersonIcon />} label={n.type || 'Individual'} variant="outlined" />
                     </TableCell>
-                    <TableCell>{n.owner || 'N/A'}</TableCell>
                     <TableCell>{n.address || 'N/A'}</TableCell>
+                    <TableCell>{n.description}</TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1.5}>
                         <Button variant="contained" startIcon={<VisibilityIcon />} onClick={() => onVer(n)}>

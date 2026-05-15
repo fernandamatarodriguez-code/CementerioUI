@@ -40,14 +40,16 @@ export default function AllocateNiche() {
   const [error, setError] = React.useState("");
 
   const [form, setForm] = React.useState({
-    numero: nicheFromState?.number || "",
-    anualidad: "",
-    cedula: "",
-    propietario: "",
-    telefono: "",
-    direccion: "",
+    id: null,
+    nicheMainId: nicheFromState.id,
+    number: nicheFromState.number,
+    lastPayment: "",
+    identification: "",
+    owner: "",
+    phone: "",
+    address: "",
     email: "",
-    descripcion: "",
+    description: "",
   });
 
   const [file, setFile] = React.useState(null);
@@ -58,8 +60,8 @@ export default function AllocateNiche() {
 
   const [openDifunto, setOpenDifunto] = React.useState(false);
   const [difunto, setDifunto] = React.useState({
-    nombre: "",
-    apellidos: "",
+    name: "",
+    lastName: "",
     fechaNacimiento: "",
     fechaDefuncion: "",
   });
@@ -72,8 +74,8 @@ export default function AllocateNiche() {
     setDifuntos((prev) => [...prev, difunto]);
     setOpenDifunto(false);
     setDifunto({
-      nombre: "",
-      apellidos: "",
+      name: "",
+      lastName: "",
       fechaNacimiento: "",
       fechaDefuncion: "",
     });
@@ -106,14 +108,15 @@ export default function AllocateNiche() {
     try {
       // 1. Crear el nicho
       const nicheData = {
-        number: form.numero,
-        owner: form.propietario,
+        nicheMainId: form.nicheMainId,
+        number: form.number,
+        owner: form.owner,
         type: "Individual",
-        identification: form.cedula,
-        phone: form.telefono,
-        address: form.direccion,
+        identification: form.identification,
+        phone: form.phone,
+        address: form.address,
         email: form.email,
-        description: form.descripcion,
+        description: form.description,
         status: "ocupado",
         is_active: true,
       };
@@ -124,8 +127,8 @@ export default function AllocateNiche() {
       for (const difunto of difuntos) {
         await insertOccupant({
           nicheId: createdNiche.id,
-          name: difunto.nombre,
-          lastName: difunto.apellidos,
+          name: difunto.name,
+          lastName: difunto.lastName,
           fechaNacimiento: difunto.fechaNacimiento,
           fechaDefuncion: difunto.fechaDefuncion,
         });
@@ -180,7 +183,7 @@ export default function AllocateNiche() {
 
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <TextField label="Número de Nicho" fullWidth value={form.numero} onChange={onChange("numero")}
+                <TextField label="Número de Nicho" fullWidth value={form.number} onChange={onChange("number")}
                 InputProps={{
                       readOnly: true,
                       }}
@@ -193,25 +196,25 @@ export default function AllocateNiche() {
                   label="Año de Última Anualidad Pagada"
                   type="number"
                   fullWidth
-                  value={form.anualidad}
-                  onChange={onChange("anualidad")}
+                  value={form.lastPayment}
+                  onChange={onChange("lastPayment")}
                 />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <TextField label="Cédula del Propietario" fullWidth value={form.cedula} onChange={onChange("cedula")} />
+                <TextField label="Cédula del Propietario" fullWidth value={form.identification} onChange={onChange("identification")} />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <TextField label="Nombre del Propietario" fullWidth value={form.propietario} onChange={onChange("propietario")} />
+                <TextField label="Nombre del Propietario" fullWidth value={form.owner} onChange={onChange("owner")} />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <TextField label="Teléfono" fullWidth value={form.telefono} onChange={onChange("telefono")} />
+                <TextField label="Teléfono" fullWidth value={form.phone} onChange={onChange("phone")} />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <TextField label="Dirección" fullWidth value={form.direccion} onChange={onChange("direccion")} />
+                <TextField label="Dirección" fullWidth value={form.address} onChange={onChange("address")} />
               </Grid>
 
               <Grid item xs={12} md={6}>
@@ -219,7 +222,7 @@ export default function AllocateNiche() {
               </Grid>
 
               <Grid item xs={12}>
-                <TextField label="Descripción" multiline rows={3} fullWidth value={form.descripcion} onChange={onChange("descripcion")} />
+                <TextField label="Descripción" multiline rows={3} fullWidth value={form.description} onChange={onChange("description")} />
               </Grid>
             </Grid>
 
@@ -252,8 +255,8 @@ export default function AllocateNiche() {
                   <TableBody>
                     {difuntos.map((d, index) => (
                       <TableRow key={index}>
-                        <TableCell>{d.nombre}</TableCell>
-                        <TableCell>{d.apellidos}</TableCell>
+                        <TableCell>{d.name}</TableCell>
+                        <TableCell>{d.lastName}</TableCell>
                         <TableCell>{d.fechaNacimiento}</TableCell>
                         <TableCell>{d.fechaDefuncion}</TableCell>
                       </TableRow>
@@ -325,8 +328,8 @@ export default function AllocateNiche() {
 
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField label="Nombre" fullWidth onChange={handleDifuntoChange("nombre")} />
-            <TextField label="Apellidos" fullWidth onChange={handleDifuntoChange("apellidos")} />
+            <TextField label="Nombre" fullWidth onChange={handleDifuntoChange("name")} />
+            <TextField label="Apellidos" fullWidth onChange={handleDifuntoChange("lastName")} />
             <TextField type="date" label="Fecha Nacimiento" InputLabelProps={{ shrink: true }} onChange={handleDifuntoChange("fechaNacimiento")} />
             <TextField type="date" label="Fecha Defunción" InputLabelProps={{ shrink: true }} onChange={handleDifuntoChange("fechaDefuncion")} />
           </Stack>
